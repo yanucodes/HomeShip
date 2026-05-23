@@ -15,7 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from models.base import Base
 
 if TYPE_CHECKING:
-    from models.ship_members import ShipMember
+    from models.ship_member import ShipMember
 
 
 class User(Base):
