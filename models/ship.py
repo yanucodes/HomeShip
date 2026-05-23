@@ -15,7 +15,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from models.base import Base
 
 if TYPE_CHECKING:
-    from models.ship_members import ShipMember
+    from models.ship_member import ShipMember
+    from models.supply import Supply
+    from models.task import Task
 
 
 class Ship(Base):
@@ -27,6 +29,11 @@ class Ship(Base):
         shipname: Non-null display name of the ship.
         start_date: Date the ship's journey began. Used to compute distance
             traveled (one light year per alert-free day).
+        ship_memberships: Crew membership rows for this ship. Two-way mirror
+            of `ShipMember.ship`.
+        tasks: Tasks belonging to this ship. Two-way mirror of `Task.ship`.
+        supplies: Supplies tracked by this ship. Two-way mirror of
+            `Supply.ship`.
     """
 
     __tablename__ = "ships"
@@ -38,5 +45,11 @@ class Ship(Base):
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
 
     ship_memberships: Mapped[list["ShipMember"]] = relationship(
+        back_populates="ship", cascade="all, delete-orphan"
+    )
+    tasks: Mapped[list["Task"]] = relationship(
+        back_populates="ship", cascade="all, delete-orphan"
+    )
+    supplies: Mapped[list["Supply"]] = relationship(
         back_populates="ship", cascade="all, delete-orphan"
     )
