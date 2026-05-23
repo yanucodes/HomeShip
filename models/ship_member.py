@@ -28,9 +28,9 @@ class ShipMember(Base):
     once.
 
     Attributes:
-        user_id: Foreing key to `users.user_id`. Part of the composite
+        user_id: Foreign key to `users.user_id`. Part of the composite
             primary key.
-        ship_id: Foreing key to `ships.ship_id`. Part of the composite
+        ship_id: Foreign key to `ships.ship_id`. Part of the composite
             primary key.
         role: The user's role on this ship (e.g. "Captain"). Defaults to
             "Crew Member".
