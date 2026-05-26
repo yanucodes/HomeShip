@@ -52,6 +52,7 @@ class Supply(Base):
     alert_state: Mapped[AlertState] = mapped_column(
         SqlEnum(
             AlertState,
+            name="alert_state",
             values_callable=lambda enum_cls: [m.value for m in enum_cls],
         ),
         nullable=False,
