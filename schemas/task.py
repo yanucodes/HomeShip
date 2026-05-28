@@ -26,8 +26,5 @@ class TaskRead(TaskBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class TaskUpdate(BaseModel):
-    frequency: timedelta | None = None
+class TaskUpdate(TaskBase):
     content: str | None = None
-    date_last: date | None = None
-    date_due: date | None = None
