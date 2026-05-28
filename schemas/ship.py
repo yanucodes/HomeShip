@@ -20,6 +20,6 @@ class ShipRead(ShipBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class ShipUpdate(BaseModel):
+class ShipUpdate(ShipBase):
     shipname: str | None = None
     start_date: date | None = None
