@@ -12,8 +12,7 @@ import enum
 from typing import TYPE_CHECKING
 import uuid
 
-from sqlalchemy import (Boolean, Date, Enum as SqlEnum, ForeignKey, Integer,
-                        String)
+from sqlalchemy import Date, Enum as SqlEnum, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -45,7 +44,6 @@ class Supply(Base):
             on insert if the caller does not provide one.
         ship_id: Foreign key to `ships.ship_id`.
         name: Non-null display name of the supply (e.g. "Shampoo").
-        in_stock: Whether the item is currently available in the household.
         stock_state: Whether the item is currently available in the
             household in sufficient amount.
         quantity: How many units are on hand (optional).
@@ -65,7 +63,6 @@ class Supply(Base):
         UUID(as_uuid=True), ForeignKey("ships.ship_id"), nullable=False
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
-    in_stock: Mapped[bool] = mapped_column(Boolean, nullable=False)
     stock_state: Mapped[StockState] = mapped_column(
         SqlEnum(StockState, name="stock_state",
                 values_callable=lambda enum_cls: [m.value for m in enum_cls],
