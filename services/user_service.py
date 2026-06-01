@@ -78,3 +78,55 @@ class UserService:
             if len(ship.ship_memberships) == 1:
                 self.ship_repository.delete(ship)
         self.user_repository.delete(user)
+
+    def create_ship_for_user(self, user: User, ship_data: ShipCreate,
+                             ship_member_data: ShipMemberCreate) -> Ship:
+        """Create a ship and make user its crew member with the chosen role.
+
+        Args:
+            user: The user creating the ship; becomes its first member.
+            ship_data: Validated ship fields from the request.
+            ship_member_data: Validated ship member fields from the request
+
+        Returns:
+            The newly created Ship, with its server-generated ship_id.
+        """
+        ship = self.ship_repository.add(Ship(**ship_data.model_dump()))
+        self.ship_member_repository.add(
+            ShipMember(
+                user_id=user.user_id,
+                ship_id=ship.ship_id,
+                **ship_member_data.model_dump()
+            )
+        )
+        return ship
+
+    def get_ships(self, user: User) -> list[Ship]:
+        """
+        Get all ships the user is a member of.
+
+        Args:
+            user: The user whose ships to get.
+
+        Returns:
+            List of Ship objects.
+        """
+        return [membership.ship for membership in user.ship_memberships]
+
+    def delete_ship_membership(self,
+                               user: User,
+                               ship_membership: ShipMember) -> None:
+        """
+        Delete ship membership for the user.
+
+        Associated ship is deleted if the user is the only member.
+
+        Args:
+            user: User whose membership is to delete.
+            ship_membership: Ship membership to delete.
+        """
+        ship = ship_membership.ship
+        if len(ship.ship_memberships) == 1:
+            self.ship_repository.delete(ship) # cascade removes the membership
+        else:
+            self.ship_member_repository.delete(ship_membership)
