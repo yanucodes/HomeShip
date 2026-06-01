@@ -22,3 +22,17 @@ def create_user(user_data: UserCreate,
         dropped by the response model and never leaves this boundary.
     """
     return service.create_user(user_data)
+
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(service: UserService = Depends(get_user_service)):
+    """
+    Delete user with a given ID.
+
+    Args:
+        service: User service, injected by FastAPI via `get_user_service`.
+    """
+    user = service.get_user_by_id(user_id)
+    if user is None:
+        raise HTTPException(status_code=404)
+    service.delete_user(user)
