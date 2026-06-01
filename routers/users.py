@@ -1,5 +1,7 @@
 """User endpoints."""
-from fastapi import APIRouter, Depends, status
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from dependencies import get_user_service
 from schemas import UserCreate, UserRead
@@ -24,8 +26,27 @@ def create_user(user_data: UserCreate,
     return service.create_user(user_data)
 
 
+@router.get("/{user_id}", response_model=UserRead)
+def get_user(user_id: uuid.UUID,
+             service: UserService = Depends(get_user_service)):
+    """
+    Fetch user data.
+
+    Args:
+        service: User service, injected by FastAPI via `get_user_service`.
+
+    Returns:
+        The user serialized as `UserRead`.
+    """
+    user = service.get_user_by_id(user_id)
+    if user is None:
+        raise HTTPException(status_code=404)
+    return user
+
+
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(service: UserService = Depends(get_user_service)):
+def delete_user(user_id: uuid.UUID,
+                service: UserService = Depends(get_user_service)):
     """
     Delete user with a given ID.
 
