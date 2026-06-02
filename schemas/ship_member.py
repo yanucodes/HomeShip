@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class ShipMemberBase(BaseModel):
@@ -10,7 +10,12 @@ class ShipMemberBase(BaseModel):
 
 
 class ShipMemberCreate(ShipMemberBase):
-    role: str = "Crew Member"
+    role: str = ("Crew Member")
+
+
+class ShipMemberAdd(ShipMemberCreate):
+    """Add an existing user to a ship's crew, identified by email."""
+    email: EmailStr
 
 
 class ShipMemberRead(ShipMemberBase):

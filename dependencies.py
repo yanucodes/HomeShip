@@ -32,4 +32,5 @@ def get_ship_service(session: Session = Depends(get_session)) -> ShipService:
         ship_member_repository=ShipMemberRepository(session),
         task_repository=TaskRepository(session),
         supply_repository=SupplyRepository(session),
+        user_repository=UserRepository(session),
     )

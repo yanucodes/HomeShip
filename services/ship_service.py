@@ -1,10 +1,10 @@
 """Service layer for Ship: orchestrates operations on ship, its tasks and
 supplies."""
 import uuid
-from models import Ship, ShipMember, Supply, Task, User
+from models import Ship, ShipMember, Supply, Task
 from repositories import (ShipMemberRepository, ShipRepository,
-                          TaskRepository, SupplyRepository)
-from schemas import ShipMemberCreate, TaskCreate, SupplyCreate
+                          TaskRepository, SupplyRepository, UserRepository)
+from schemas import ShipMemberAdd, TaskCreate, SupplyCreate
 
 
 class ShipService:
@@ -12,11 +12,13 @@ class ShipService:
                  ship_repository: ShipRepository,
                  ship_member_repository: ShipMemberRepository,
                  task_repository: TaskRepository,
-                 supply_repository: SupplyRepository):
+                 supply_repository: SupplyRepository,
+                 user_repository: UserRepository):
         self.ship_repository = ship_repository
         self.ship_member_repository = ship_member_repository
         self.task_repository = task_repository
         self.supply_repository = supply_repository
+        self.user_repository = user_repository
 
     def get_ship_by_id(self, ship_id: uuid.UUID) -> Ship | None:
         """
@@ -102,23 +104,25 @@ class ShipService:
         """
         self.supply_repository.delete(supply)
 
-    def add_member_to_ship(self, user: User, ship: Ship,
-                   ship_member_data: ShipMemberCreate) -> ShipMember:
+    def add_member_to_ship(self, ship: Ship,
+                   member_data: ShipMemberAdd) -> ShipMember | None:
         """
-        Add user as a new member of the crew on the ship.
+        Add an existing user to the ship's crew, found by email.
 
         Args:
-            user: User to add.
             ship: Ship to which a member is being added.
-            ship_member_data: Validated ship member fields from the request.
+            member_data: Validated member fields from the request.
 
         Returns:
-            Newly created ShipMember object.
+            The newly created ShipMember, or None if no user has that email.
         """
+        user = self.user_repository.get_by_email(member_data.email)
+        if user is None:
+            return None
         new_member = ShipMember(
             user_id=user.user_id,
             ship_id=ship.ship_id,
-            **ship_member_data.model_dump()
+            role=member_data.role,
         )
         self.ship_member_repository.add(new_member)
         return new_member
