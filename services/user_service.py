@@ -28,7 +28,7 @@ class UserService:
         """
         data = user_data.model_dump(exclude={"password"})
         if data.get("display_name") is None:
-            data["display_name"] = data["username"]
+            data["display_name"] = data["username"].capitalize()
         new_user = User(**data, password_hash=hash_password(
             user_data.password))
         return self.user_repository.add(new_user)
