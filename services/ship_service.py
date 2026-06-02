@@ -18,6 +18,18 @@ class ShipService:
         self.task_repository = task_repository
         self.supply_repository = supply_repository
 
+    def get_ship_by_id(self, ship_id: uuid.UUID) -> Ship | None:
+        """
+        Find ship by its ID.
+
+        Args:
+            ship_id: UUID of that ship.
+
+        Returns:
+            Ship object or None if ship is not found.
+        """
+        return self.ship_repository.get(ship_id)
+
     def create_task(self, ship: Ship, task_data: TaskCreate) -> Task:
         """Create a task belonging to the given ship.
 
