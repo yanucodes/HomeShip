@@ -4,7 +4,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from dependencies import get_user_service
-from schemas import UserCreate, UserRead
+from schemas import UserCreate, UserRead, UserUpdate
 from services import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -33,6 +33,7 @@ def get_user(user_id: uuid.UUID,
     Fetch user data.
 
     Args:
+        user_id: ID of the user.
         service: User service, injected by FastAPI via `get_user_service`.
 
     Returns:
@@ -42,6 +43,26 @@ def get_user(user_id: uuid.UUID,
     if user is None:
         raise HTTPException(status_code=404)
     return user
+
+
+@router.patch("/{user_id}", response_model=UserRead)
+def update_user(user_id: uuid.UUID, user_data: UserUpdate,
+                service: UserService = Depends(get_user_service)):
+    """
+    Update user data.
+
+    Args:
+        user_id: ID of the user.
+        user_data: Validated partial user fields from the request body.
+        service: User service, injected by FastAPI via `get_user_service`.
+
+    Returns:
+        The updated user serialized as `UserRead`.
+    """
+    user = service.get_user_by_id(user_id)
+    if user is None:
+        raise HTTPException(status_code=404)
+    return service.update_user(user, user_data)
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
