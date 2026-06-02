@@ -18,6 +18,10 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pylint>=3.0"]
 
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
 [project.urls]
 "Source Code" = "https://github.com/yanucodes/HomeShip"
 
