@@ -42,10 +42,14 @@ class ShipService:
         Returns:
             The newly created Task.
         """
-        task = self.task_repository.add(
-            Task(**task_data.model_dump(), ship_id=ship.ship_id)
+        task = Task.scheduled(
+            ship_id=ship.ship_id,
+            content=task_data.content,
+            frequency=task_data.frequency,
+            date_last=task_data.date_last,
+            date_due=task_data.date_due,
         )
-        return task
+        return self.task_repository.add(task)
 
     def get_tasks(self, ship: Ship) -> list[Task]:
         """
