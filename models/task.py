@@ -59,7 +59,79 @@ class Task(Base):
             values_callable=lambda enum_cls: [m.value for m in enum_cls],
         ),
         nullable=False,
-        default=AlertState.GREEN,
+        default=AlertState.INACTIVE,
     )
 
     ship: Mapped["Ship"] = relationship(back_populates="tasks")
+
+    @staticmethod
+    def derive_dates(
+        frequency: timedelta | None,
+        date_last: date | None,
+        date_due: date | None,
+        today: date | None = None,
+        ) -> tuple[date | None, date | None]:
+        """Fill in a task's schedule from the fields the client supplied.
+
+        The three date-related fields are all optional, and their
+        combination encodes the task's lifecycle:
+
+        * recurring (`frequency` set): default `date_last` to today and, if
+          no `date_due` was given, set it to `date_last + frequency`.
+        * one-off with a deadline (no `frequency`, `date_due` given): clear
+          `date_last` — a one-off task hasn't been "last done".
+        * inactive (neither given): leave both null.
+
+        Returns:
+            The `(date_last, date_due)` pair after derivation.
+        """
+        today = today or date.today()
+        if frequency:
+            date_last = date_last or today
+            if date_due is None:
+                date_due = date_last + frequency
+        elif date_due is not None:
+            date_last = None
+        return date_last, date_due
+
+    @classmethod
+    def scheduled(
+        cls,
+        *,
+        ship_id: uuid.UUID,
+        content: str,
+        frequency: timedelta | None = None,
+        date_last: date | None = None,
+        date_due: date | None = None,
+        today: date | None = None,
+        ) -> "Task":
+        """Build a Task with its schedule and alert state derived from the
+        given fields.
+
+        Encapsulates "how to construct a valid task" in one place. The dates
+        are filled in via `derive_dates` and the alert state via
+        `AlertState.on_creation`.
+
+        Args:
+            ship_id: ID of the ship the task belongs to.
+            content: Description of the task.
+            frequency: Interval for a recurring task, or None.
+            date_last: Date the task was last completed, or None.
+            date_due: Date the task is due, or None.
+            today: Reference date for derivation; defaults to `date.today()`.
+                Injectable to keep construction deterministic in tests.
+
+        Returns:
+            A new, unsaved `Task` with derived dates and alert state.
+        """
+        date_last, date_due = cls.derive_dates(
+            frequency, date_last, date_due, today
+        )
+        return cls(
+            ship_id=ship_id,
+            content=content,
+            frequency=frequency,
+            date_last=date_last,
+            date_due=date_due,
+            alert_state=AlertState.on_creation(date_due),
+        )
