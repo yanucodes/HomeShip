@@ -7,7 +7,7 @@ Maps to the `supplies` table. See `AlertState` in `models.alert_state`
 for the meaning of each alert level.
 """
 
-from datetime import date
+from datetime import date, timedelta
 import enum
 from typing import TYPE_CHECKING
 import uuid
@@ -83,3 +83,40 @@ class Supply(Base):
     )
 
     ship: Mapped["Ship"] = relationship(back_populates="supplies")
+
+    @staticmethod
+    def derive_alert(stock_state: StockState, date_due: date | None = None,
+                     today: date | None = None) -> AlertState:
+        """
+        Derive alert state based on `stock_state` and `date_due`.
+
+        Alert is `green` if the item is in stock, `yellow` if the item is
+        running low, or out of stock with a `date_due` more than a day away.
+        It is `red` if the item is out of stock and no `date_due` or the
+        deadline is close — `date_due` is today or tomorrow — so the crew is
+        warned before it's too late to act. It is `auto-destruct` if the item
+        is out of stock and `date_due` has already passed.
+
+        Args:
+            stock_state: Whether the item is currently available in the
+                household in sufficient amount.
+            date_due: Deadline for buying the item.
+            today: Current date. Defaults to `date.today()`.
+
+        Returns:
+            Derived `AlertState` for the item.
+        """
+        if today is None:
+            today = date.today()
+
+        if stock_state == StockState.IN_STOCK:
+            return AlertState.GREEN
+        elif stock_state == StockState.RUNNING_LOW:
+            return AlertState.YELLOW
+        else:
+            if date_due is not None and date_due < today:
+                return AlertState.AUTO_DESTRUCT
+            elif date_due is None or date_due <= today + timedelta(days=1):
+                return AlertState.RED
+            else:
+                return AlertState.YELLOW
