@@ -10,7 +10,7 @@ class ShipMemberBase(BaseModel):
 
 
 class ShipMemberCreate(ShipMemberBase):
-    role: str = ("Crew Member")
+    role: str = "Crew Member"
 
 
 class ShipMemberAdd(ShipMemberCreate):
