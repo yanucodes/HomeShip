@@ -85,6 +85,19 @@ def get_ship_or_404(ship_id: uuid.UUID,
     return ship
 
 
+def get_ship_membership_or_404(
+        user: User = Depends(get_user_or_404),
+        ship: Ship = Depends(get_ship_or_404),
+        service: UserService = Depends(get_user_service),
+) -> ShipMember:
+    """Resolve the path's (user_id, ship_id) to a ShipMember, or raise 404."""
+    membership = service.get_ship_membership(user, ship)
+    if membership is None:
+        raise HTTPException(status_code=404,
+                            detail="User is not a member of this ship.")
+    return membership
+
+
 def get_task_or_404(task_id: uuid.UUID,
                     ship: Ship = Depends(get_ship_or_404),
                     service: ShipService = Depends(get_ship_service)) -> Task:
