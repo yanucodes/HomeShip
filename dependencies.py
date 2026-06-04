@@ -10,7 +10,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_session
-from models import Ship, Supply, Task
+from models import Ship, Supply, Task, User
 from repositories import (
     ShipMemberRepository,
     ShipRepository,
@@ -53,6 +53,21 @@ def get_ship_service(session: Session = Depends(get_session)) -> ShipService:
         supply_repository=SupplyRepository(session),
         user_repository=UserRepository(session),
     )
+
+
+def get_user_or_404(user_id: uuid.UUID,
+                    service: UserService = Depends(get_user_service)) -> User:
+    """Resolve a path's `user_id` to a User, or raise 404.
+
+    Lets user-scoped routes receive an already-validated `User` instead of
+    repeating the lookup-or-404 dance. `get_user_service` is shared with the
+    endpoint within a request (FastAPI caches dependencies), so this adds no
+    extra session or query wiring.
+    """
+    user = service.get_user_by_id(user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 
 
 def get_ship_or_404(ship_id: uuid.UUID,
