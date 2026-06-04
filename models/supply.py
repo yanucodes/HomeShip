@@ -45,11 +45,12 @@ class Supply(Base):
         ship_id: Foreign key to `ships.ship_id`.
         name: Non-null display name of the supply (e.g. "Shampoo").
         stock_state: Whether the item is currently available in the
-            household in sufficient amount.
+            household in sufficient amount. Defaults to
+            `StockState.OUT_OF_STOCK`
         quantity: How many units are on hand (optional).
         date_due: Deadline for buying the item (optional).
         alert_state: Urgency level for this supply. Defaults to
-            `AlertState.GREEN`.
+            `AlertState.RED`.
         ship: The `Ship` this supply belongs to. Two-way mirror of
             `Ship.supplies`.
     """
@@ -68,7 +69,7 @@ class Supply(Base):
                 values_callable=lambda enum_cls: [m.value for m in enum_cls],
                 ),
         nullable=False,
-        default=StockState.IN_STOCK
+        default=StockState.OUT_OF_STOCK
     )
     quantity: Mapped[int | None] = mapped_column(Integer)
     date_due: Mapped[date | None] = mapped_column(Date)
@@ -79,7 +80,7 @@ class Supply(Base):
             values_callable=lambda enum_cls: [m.value for m in enum_cls],
         ),
         nullable=False,
-        default=AlertState.GREEN,
+        default=AlertState.RED,
     )
 
     ship: Mapped["Ship"] = relationship(back_populates="supplies")
@@ -120,3 +121,40 @@ class Supply(Base):
                 return AlertState.RED
             else:
                 return AlertState.YELLOW
+
+
+    @classmethod
+    def set_alert_on_creation(cls, *, ship_id: uuid.UUID, name: str,
+                              stock_state: StockState | None = None,
+                              quantity: int | None = None,
+                              date_due: date | None = None,
+                              today: date | None = None) -> "Supply":
+        """
+        Build a Supply with its alert state derived from the given fields.
+
+        Encapsulates "how to construct a valid supply" in one place. The alert
+        state is derived from `stock_state` and `date_due` via `derive_alert`.
+
+        Args:
+            ship_id: ID of the ship the supply belongs to.
+            name: Display name of the supply (e.g. "Shampoo").
+            stock_state: Current stock level. Defaults to
+                `StockState.OUT_OF_STOCK` — supplies are usually added the
+                moment the crew runs out.
+            quantity: Units on hand, or None.
+            date_due: Deadline for buying the item, or None.
+            today: Reference date for derivation; defaults to `date.today()`.
+                Injectable to keep construction deterministic in tests.
+
+        Returns:
+            A new, unsaved `Supply` with derived alert state.
+        """
+        stock_state = stock_state or StockState.OUT_OF_STOCK
+        return cls(
+            ship_id=ship_id,
+            name=name,
+            stock_state=stock_state,
+            quantity=quantity,
+            date_due=date_due,
+            alert_state=cls.derive_alert(stock_state, date_due, today),
+        )
