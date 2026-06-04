@@ -47,6 +47,23 @@ def add_member(member_data: ShipMemberAdd,
     return member
 
 
+@router.get("/{ship_id}/tasks", response_model=list[TaskRead])
+def get_tasks(ship: Ship = Depends(get_ship_or_404), service:
+              ShipService=Depends(get_ship_service)):
+    """
+    List all tasks belonging to the ship.
+
+    Args:
+        ship: Ship resolved from the path's `ship_id` (404 if not found).
+        service: Ship service, injected by FastAPI via `get_ship_service`.
+
+    Returns:
+        The ship's tasks, each serialized as `TaskRead`. An empty list if
+        the ship has no tasks.
+    """
+    return service.get_tasks(ship)
+
+
 @router.post("/{ship_id}/tasks", response_model=TaskRead,
              status_code=status.HTTP_201_CREATED)
 def add_task(task_data: TaskCreate,
