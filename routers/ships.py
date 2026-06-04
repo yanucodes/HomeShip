@@ -1,8 +1,8 @@
 """Ship endpoints."""
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from dependencies import get_ship_or_404, get_ship_service
-from models import Ship
+from dependencies import get_ship_or_404, get_ship_service, get_task_or_404
+from models import Ship, Task
 from schemas import (ShipRead, ShipMemberAdd, ShipMemberRead, TaskCreate,
                      TaskRead)
 from services import ShipService
@@ -81,3 +81,20 @@ def add_task(task_data: TaskCreate,
         The newly created Task serialized as `TaskRead`.
     """
     return service.create_task(ship, task_data)
+
+
+@router.delete("{ship_id}/tasks/{task_id}",
+               status_code=status.HTTP_204_NO_CONTENT)
+def delete_task(task: Task = Depends(get_task_or_404),
+                service: ShipService = Depends(get_ship_service)):
+    """
+    Delete task from the database.
+
+    Task is only deleted if it belongs to the ship with the given ID.
+    Otherwise, Error 404 is raised.
+
+    Args:
+        task: Task to delete.
+        service: Ship service, injected by FastAPI via `get_ship_service`.
+    """
+    service.delete_task(task)
