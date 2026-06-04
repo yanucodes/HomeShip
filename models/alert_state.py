@@ -35,9 +35,9 @@ class AlertState(enum.Enum):
         """
         if self == AlertState.GREEN:
             return AlertState.YELLOW
-        elif self == AlertState.YELLOW:
+        if self == AlertState.YELLOW:
             return AlertState.RED
-        elif self == AlertState.RED:
+        if self == AlertState.RED:
             return AlertState.AUTO_DESTRUCT
         return self
 
@@ -58,7 +58,6 @@ class AlertState(enum.Enum):
         """
         if date_due is None:
             return AlertState.INACTIVE
-        elif date_due >= date.today():
+        if date_due >= date.today():
             return AlertState.GREEN
-        else:
-            return AlertState.YELLOW
+        return AlertState.YELLOW
