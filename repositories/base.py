@@ -3,22 +3,22 @@ from typing import Any, Generic, TypeVar
 
 from sqlalchemy.orm import Session
 
-ModelType = TypeVar("ModelType")
+ModelT = TypeVar("ModelT")
 
 
-class BaseRepository(Generic[ModelType]):
+class BaseRepository(Generic[ModelT]):
     """CRUD operations on a single SQLAlchemy model.
 
     Subclasses bind the model with `model = SomeModel` and add their own
     query methods.
     """
 
-    model: type[ModelType]
+    model: type[ModelT]
 
     def __init__(self, session: Session):
         self.session = session
 
-    def get(self, entity_id) -> ModelType | None:
+    def get(self, entity_id) -> ModelT | None:
         """Fetch one entity by primary key.
 
         Returns:
@@ -26,7 +26,7 @@ class BaseRepository(Generic[ModelType]):
         """
         return self.session.get(self.model, entity_id)
 
-    def add(self, entity: ModelType) -> ModelType:
+    def add(self, entity: ModelT) -> ModelT:
         """Insert a new entity and flush so server-generated fields
         populate. After flush, the entity's PK is readable and can be used
         as an FK for subsequent writes in the same request.
@@ -42,7 +42,7 @@ class BaseRepository(Generic[ModelType]):
         self.session.flush()
         return entity
 
-    def update(self, entity: ModelType, changes: dict[str, Any]) -> ModelType:
+    def update(self, entity: ModelT, changes: dict[str, Any]) -> ModelT:
         """Apply a partial update to an existing entity. Pass only fields
         the client sent. Fields not present in `changes` are left untouched.
 
@@ -58,7 +58,7 @@ class BaseRepository(Generic[ModelType]):
         self.session.flush()
         return entity
 
-    def delete(self, entity: ModelType) -> None:
+    def delete(self, entity: ModelT) -> None:
         """Delete an entity and flush so FK violations surface immediately.
 
         Raises:
