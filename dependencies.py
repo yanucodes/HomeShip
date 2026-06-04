@@ -10,7 +10,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_session
-from models import Ship, Supply, Task, User
+from models import Ship, ShipMember, Supply, Task, User
 from repositories import (
     ShipMemberRepository,
     ShipRepository,
