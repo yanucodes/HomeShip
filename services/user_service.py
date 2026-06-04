@@ -127,6 +127,6 @@ class UserService:
         """
         ship = ship_membership.ship
         if len(ship.ship_memberships) == 1:
-            self.ship_repository.delete(ship) # cascade removes the membership
+            self.ship_repository.delete(ship)  # cascade removes the membership
         else:
             self.ship_member_repository.delete(ship_membership)

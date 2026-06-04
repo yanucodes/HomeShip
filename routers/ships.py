@@ -49,8 +49,8 @@ def add_member(member_data: ShipMemberAdd,
 
 
 @router.get("/{ship_id}/tasks", response_model=list[TaskRead])
-def get_tasks(ship: Ship = Depends(get_ship_or_404), service:
-              ShipService=Depends(get_ship_service)):
+def get_tasks(ship: Ship = Depends(get_ship_or_404),
+              service: ShipService = Depends(get_ship_service)):
     """
     List all tasks belonging to the ship.
 
@@ -102,8 +102,8 @@ def delete_task(task: Task = Depends(get_task_or_404),
 
 
 @router.get("/{ship_id}/supplies", response_model=list[SupplyRead])
-def get_supplies(ship: Ship = Depends(get_ship_or_404), service:
-              ShipService=Depends(get_ship_service)):
+def get_supplies(ship: Ship = Depends(get_ship_or_404),
+                 service: ShipService = Depends(get_ship_service)):
     """
     List all supplies belonging to the ship.
 
@@ -121,8 +121,8 @@ def get_supplies(ship: Ship = Depends(get_ship_or_404), service:
 @router.post("/{ship_id}/supplies", response_model=SupplyRead,
              status_code=status.HTTP_201_CREATED)
 def add_supply(supply_data: SupplyCreate,
-             ship: Ship = Depends(get_ship_or_404),
-             service: ShipService = Depends(get_ship_service)):
+               ship: Ship = Depends(get_ship_or_404),
+               service: ShipService = Depends(get_ship_service)):
     """
     Add a new supply to the ship.
 
@@ -140,7 +140,7 @@ def add_supply(supply_data: SupplyCreate,
 @router.delete("{ship_id}/supplies/{supply_id}",
                status_code=status.HTTP_204_NO_CONTENT)
 def delete_supply(supply: Supply = Depends(get_supply_or_404),
-                service: ShipService = Depends(get_ship_service)):
+                  service: ShipService = Depends(get_ship_service)):
     """
     Delete supply from the database.
 

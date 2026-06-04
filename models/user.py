@@ -28,7 +28,8 @@ class User(Base):
         display_name: Name displayed in UI.
         email: Unique, non-null email address used for login and contact.
         password_hash: bcrypt hash of the user's password. The raw password
-            must never be persisted; hash it at the auth layer before assigning.
+            must never be persisted; hash it at the authentication layer
+            before assigning.
     """
 
     __tablename__ = "users"

@@ -153,7 +153,7 @@ class ShipService:
         self.supply_repository.delete(supply)
 
     def add_member_to_ship(self, ship: Ship,
-                   member_data: ShipMemberAdd) -> ShipMember | None:
+                           member_data: ShipMemberAdd) -> ShipMember | None:
         """
         Add an existing user to the ship's crew, found by email.
 

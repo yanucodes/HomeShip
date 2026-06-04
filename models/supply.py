@@ -114,7 +114,6 @@ class Supply(Alertable, Base):
             return AlertState.RED
         return AlertState.YELLOW
 
-
     @classmethod
     def set_alert_on_creation(cls, *, ship_id: uuid.UUID, name: str,
                               stock_state: StockState | None = None,

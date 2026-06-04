@@ -27,7 +27,8 @@ def test_create_user_stores_hash_not_raw_password(session, test_user_data):
     assert user.password_hash != data["password"]
 
 
-def test_create_user_defaults_display_name_to_username(session, test_user_data):
+def test_create_user_defaults_display_name_to_username(
+        session, test_user_data):
     service = build_user_service(session)
     data = test_user_data["all_fields_correct"]
 

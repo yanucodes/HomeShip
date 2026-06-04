@@ -55,10 +55,8 @@ def get_ship_service(session: Session = Depends(get_session)) -> ShipService:
     )
 
 
-def get_ship_or_404(
-    ship_id: uuid.UUID,
-    service: ShipService = Depends(get_ship_service),
-    ) -> Ship:
+def get_ship_or_404(ship_id: uuid.UUID,
+                    service: ShipService = Depends(get_ship_service)) -> Ship:
     """Resolve a path's `ship_id` to a Ship, or raise 404.
 
     Lets ship-scoped routes receive an already-validated `Ship` instead of
@@ -73,8 +71,8 @@ def get_ship_or_404(
 
 
 def get_task_or_404(task_id: uuid.UUID,
-    ship: Ship = Depends(get_ship_or_404),
-    service: ShipService = Depends(get_ship_service)) -> Task:
+                    ship: Ship = Depends(get_ship_or_404),
+                    service: ShipService = Depends(get_ship_service)) -> Task:
     """Resolve a path's `task_id` to a Task on the path's ship, or raise 404.
 
     Depends on `get_ship_or_404`, so the ship is validated first: a missing
@@ -89,8 +87,9 @@ def get_task_or_404(task_id: uuid.UUID,
 
 
 def get_supply_or_404(supply_id: uuid.UUID,
-    ship: Ship = Depends(get_ship_or_404),
-    service: ShipService = Depends(get_ship_service)) -> Supply:
+                      ship: Ship = Depends(get_ship_or_404),
+                      service: ShipService = Depends(get_ship_service)) -> (
+        Supply):
     """Resolve a path's `supply_id` to a Supply on the path's ship, or 404.
 
     Depends on `get_ship_or_404`, so the ship is validated first: a missing

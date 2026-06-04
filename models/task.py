@@ -63,7 +63,7 @@ class Task(Alertable, Base):
         date_last: date | None,
         date_due: date | None,
         today: date | None = None,
-        ) -> tuple[date | None, date | None]:
+    ) -> tuple[date | None, date | None]:
         """Fill in a task's schedule from the fields the client supplied.
 
         The three date-related fields are all optional, and their
@@ -97,7 +97,7 @@ class Task(Alertable, Base):
         date_last: date | None = None,
         date_due: date | None = None,
         today: date | None = None,
-        ) -> "Task":
+    ) -> "Task":
         """Build a Task with its schedule and alert state derived from the
         given fields.
 
