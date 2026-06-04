@@ -1,8 +1,9 @@
 """User endpoints."""
 from fastapi import APIRouter, Depends, status
 
-from dependencies import get_user_or_404, get_user_service
-from models import User
+from dependencies import (get_user_or_404, get_user_service,
+                          get_ship_membership_or_404)
+from models import User, ShipMember
 from schemas import (ShipCreate, ShipMemberCreate, ShipRead, UserCreate,
                      UserRead, UserUpdate)
 from services import UserService
