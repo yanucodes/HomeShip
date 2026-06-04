@@ -102,10 +102,14 @@ class ShipService:
         Returns:
             The newly created Supply.
         """
-        supply = self.supply_repository.add(
-            Supply(**supply_data.model_dump(), ship_id=ship.ship_id)
+        supply = Supply.set_alert_on_creation(
+            ship_id=ship.ship_id,
+            name=supply_data.name,
+            stock_state=supply_data.stock_state,
+            quantity=supply_data.quantity,
+            date_due=supply_data.date_due,
         )
-        return supply
+        return self.supply_repository.add(supply)
 
     def get_supplies(self, ship: Ship) -> list[Supply]:
         """
