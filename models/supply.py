@@ -12,12 +12,13 @@ import enum
 from typing import TYPE_CHECKING
 import uuid
 
-from sqlalchemy import Date, Enum as SqlEnum, ForeignKey, Integer, String
+from sqlalchemy import Enum as SqlEnum, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.alert_state import AlertState
 from models.base import Base
+from models.mixins import Alertable
 
 if TYPE_CHECKING:
     from models.ship import Ship
@@ -36,8 +37,10 @@ class StockState(enum.Enum):
     OUT_OF_STOCK = "out_of_stock"
 
 
-class Supply(Base):
+class Supply(Alertable, Base):
     """Supply item tracked by a ship's crew.
+
+    `date_due` and `alert_state` come from the `Alertable` mixin.
 
     Attributes:
         supply_id: UUID primary key. Generated in Python via `uuid.uuid4`
@@ -49,8 +52,9 @@ class Supply(Base):
             `StockState.OUT_OF_STOCK`
         quantity: How many units are on hand (optional).
         date_due: Deadline for buying the item (optional).
-        alert_state: Urgency level for this supply. Defaults to
-            `AlertState.RED`.
+        alert_state: Urgency level for this supply, derived at creation by
+            `set_alert_on_creation`. The column defaults to
+            `AlertState.INACTIVE`.
         ship: The `Ship` this supply belongs to. Two-way mirror of
             `Ship.supplies`.
     """
@@ -72,16 +76,6 @@ class Supply(Base):
         default=StockState.OUT_OF_STOCK
     )
     quantity: Mapped[int | None] = mapped_column(Integer)
-    date_due: Mapped[date | None] = mapped_column(Date)
-    alert_state: Mapped[AlertState] = mapped_column(
-        SqlEnum(
-            AlertState,
-            name="alert_state",
-            values_callable=lambda enum_cls: [m.value for m in enum_cls],
-        ),
-        nullable=False,
-        default=AlertState.RED,
-    )
 
     ship: Mapped["Ship"] = relationship(back_populates="supplies")
 

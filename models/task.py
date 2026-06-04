@@ -8,19 +8,22 @@ import uuid
 from datetime import date, timedelta
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, Enum as SqlEnum, ForeignKey, Interval, String
+from sqlalchemy import Date, ForeignKey, Interval, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.alert_state import AlertState
 from models.base import Base
+from models.mixins import Alertable
 
 if TYPE_CHECKING:
     from models.ship import Ship
 
 
-class Task(Base):
+class Task(Alertable, Base):
     """Task for the household.
+
+    `date_due` and `alert_state` come from the `Alertable` mixin.
 
     Attributes:
         task_id: UUID primary key. Generated in Python via `uuid.uuid4`
@@ -35,7 +38,7 @@ class Task(Base):
             frequency` if `alert_state` is green, later if postponed).
             Null for non-repeating tasks that have been archived.
         alert_state: Shows if the task was completed on time or postponed.
-            Defaults to `AlertState.GREEN`.
+            Defaults to `AlertState.INACTIVE`.
         ship: The `Ship` this task belongs to. Two-way mirror of
             `Ship.tasks`.
     """
@@ -51,16 +54,6 @@ class Task(Base):
     frequency: Mapped[timedelta | None] = mapped_column(Interval)
     content: Mapped[str] = mapped_column(String, nullable=False)
     date_last: Mapped[date | None] = mapped_column(Date)
-    date_due: Mapped[date | None] = mapped_column(Date)
-    alert_state: Mapped[AlertState] = mapped_column(
-        SqlEnum(
-            AlertState,
-            name="alert_state",
-            values_callable=lambda enum_cls: [m.value for m in enum_cls],
-        ),
-        nullable=False,
-        default=AlertState.INACTIVE,
-    )
 
     ship: Mapped["Ship"] = relationship(back_populates="tasks")
 
