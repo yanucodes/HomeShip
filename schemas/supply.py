@@ -3,7 +3,7 @@
 from datetime import date
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from models.alert_state import AlertState
 from models.supply import StockState
@@ -16,7 +16,19 @@ class SupplyBase(BaseModel):
     date_due: date | None = None
 
 
-class SupplyCreate(SupplyBase):
+class SupplyWrite(SupplyBase):
+    """Base for request schemas: shared fields plus the input validation."""
+
+    @field_validator("date_due")
+    @classmethod
+    def date_due_not_in_past(cls, value: date | None) -> date | None:
+        """Deadline for buying a supply cannot be in the past."""
+        if value is not None and value < date.today():
+            raise ValueError("date_due must not be in the past")
+        return value
+
+
+class SupplyCreate(SupplyWrite):
     stock_state: StockState = StockState.OUT_OF_STOCK
 
 
@@ -27,7 +39,7 @@ class SupplyRead(SupplyBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class SupplyUpdate(SupplyBase):
+class SupplyUpdate(SupplyWrite):
     name: str | None = None
     stock_state: StockState | None = None
 
