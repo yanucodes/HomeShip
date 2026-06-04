@@ -92,3 +92,20 @@ def create_ship_for_user(ship_data: ShipCreate,
         The created ship serialized as `ShipRead`.
     """
     return service.create_ship_for_user(user, ship_data, ship_member_data)
+
+
+@router.get("/{user_id}/ships", response_model=list[ShipRead])
+def get_ships(user: User = Depends(get_user_or_404),
+              service: UserService = Depends(get_user_service)):
+    """
+    List all ships the user is a crew member of.
+
+    Args:
+        user: User resolved from the path's `user_id` (404 if not found).
+        service: User service, injected by FastAPI via `get_user_service`.
+
+    Returns:
+        The user's ships, each serialized as `ShipRead`. An empty list if
+        the user isn't a member of any ship.
+    """
+    return service.get_ships(user)
