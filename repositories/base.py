@@ -18,7 +18,7 @@ class BaseRepository(Generic[ModelT]):
     def __init__(self, session: Session):
         self.session = session
 
-    def get(self, entity_id) -> ModelT | None:
+    def get(self, entity_id: Any) -> ModelT | None:
         """Fetch one entity by primary key.
 
         Returns:

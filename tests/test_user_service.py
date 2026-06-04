@@ -1,4 +1,6 @@
 """Service-layer tests for UserService."""
+from sqlalchemy.orm import Session
+
 from repositories import (
     ShipMemberRepository,
     ShipRepository,
@@ -8,7 +10,7 @@ from schemas import UserCreate
 from services import UserService
 
 
-def build_user_service(session) -> UserService:
+def build_user_service(session: Session) -> UserService:
     return UserService(
         ship_repository=ShipRepository(session),
         ship_member_repository=ShipMemberRepository(session),

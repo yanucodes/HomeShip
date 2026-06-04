@@ -4,9 +4,11 @@ Reads connection settings from the environment (`.env`), builds the engine
 and session factory, and exposes `get_session` as the single source of
 sessions for the rest of the app.
 """
+from collections.abc import Iterator
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 
 class Settings(BaseSettings):
@@ -27,7 +29,7 @@ engine = create_engine(settings.database_url)
 SessionLocal = sessionmaker(bind=engine)
 
 
-def get_session():
+def get_session() -> Iterator[Session]:
     """Provide a request-scoped session.
 
     If the endpoint returns normally, the session is committed; if anything
