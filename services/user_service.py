@@ -113,6 +113,20 @@ class UserService:
         """
         return [membership.ship for membership in user.ship_memberships]
 
+    def get_ship_membership(self, user: User, ship: Ship) -> ShipMember | None:
+        """Find the user's membership on the given ship, or None.
+
+        Args:
+            user: User whose membership is to find.
+            ship: Ship on which the membership is searched.
+
+        Return:
+            ShipMember object or None if user is not a member of the ship.
+        """
+        return self.ship_member_repository.get(
+            {"user_id": user.user_id, "ship_id": ship.ship_id}
+        )
+
     def delete_ship_membership(self, ship_membership: ShipMember) -> None:
         """
         Delete ship membership for the user.
