@@ -113,9 +113,7 @@ class UserService:
         """
         return [membership.ship for membership in user.ship_memberships]
 
-    def delete_ship_membership(self,
-                               user: User,
-                               ship_membership: ShipMember) -> None:
+    def delete_ship_membership(self, ship_membership: ShipMember) -> None:
         """
         Delete ship membership for the user.
 
