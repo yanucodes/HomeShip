@@ -63,6 +63,26 @@ class ShipService:
         """
         return ship.tasks
 
+    def get_task(self, ship: Ship, task_id: uuid.UUID) -> Task | None:
+        """
+        Get a single task belonging to the ship.
+
+        Fetches the task by primary key and confirms it belongs to the
+        given ship, so a task_id from another ship resolves to None rather
+        than leaking across ships.
+
+        Args:
+            ship: Ship the task must belong to.
+            task_id: UUID of the task to get.
+
+        Returns:
+            The Task, or None if no task with that id belongs to the ship.
+        """
+        task = self.task_repository.get(task_id)
+        if task is not None and task.ship_id == ship.ship_id:
+            return task
+        return None
+
     def delete_task(self, task: Task) -> None:
         """
         Delete task from the ship.
@@ -98,6 +118,26 @@ class ShipService:
             List of Supply objects.
         """
         return ship.supplies
+
+    def get_supply(self, ship: Ship, supply_id: uuid.UUID) -> Supply | None:
+        """
+        Get a single supply belonging to the ship.
+
+        Fetches the supply by primary key and confirms it belongs to the
+        given ship, so a supply_id from another ship resolves to None rather
+        than leaking across ships.
+
+        Args:
+            ship: Ship the supply must belong to.
+            supply_id: UUID of the supply to get.
+
+        Returns:
+            The Supply, or None if no supply with that id belongs to the ship.
+        """
+        supply = self.supply_repository.get(supply_id)
+        if supply is not None and supply.ship_id == ship.ship_id:
+            return supply
+        return None
 
     def delete_supply(self, supply: Supply) -> None:
         """
