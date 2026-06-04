@@ -109,3 +109,21 @@ def get_ships(user: User = Depends(get_user_or_404),
         the user isn't a member of any ship.
     """
     return service.get_ships(user)
+
+
+@router.delete("/{user_id}/ships/{ship_id}",
+                 status_code=status.HTTP_204_NO_CONTENT)
+def leave_ship(membership: ShipMember = Depends(get_ship_membership_or_404),
+               service: UserService = Depends(get_user_service)):
+    """
+    Remove the user's membership of the ship (they leave the crew).
+
+    If the user is the ship's only member, the ship itself is deleted
+    (taking its tasks and supplies with it via cascade).
+
+    Args:
+        membership: Ship membership resolved from the path's `user_id`
+            and `ship_id`.
+        service: User service, injected by FastAPI via `get_user_service`.
+    """
+    service.delete_ship_membership(membership)
