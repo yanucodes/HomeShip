@@ -42,4 +42,3 @@ class SupplyRead(SupplyBase):
 class SupplyUpdate(SupplyWrite):
     name: str | None = None
     stock_state: StockState | None = None
-
