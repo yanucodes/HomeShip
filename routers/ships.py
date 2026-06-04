@@ -84,7 +84,7 @@ def add_task(task_data: TaskCreate,
     return service.create_task(ship, task_data)
 
 
-@router.delete("{ship_id}/tasks/{task_id}",
+@router.delete("/{ship_id}/tasks/{task_id}",
                status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(task: Task = Depends(get_task_or_404),
                 service: ShipService = Depends(get_ship_service)):
@@ -137,7 +137,7 @@ def add_supply(supply_data: SupplyCreate,
     return service.create_supply(ship, supply_data)
 
 
-@router.delete("{ship_id}/supplies/{supply_id}",
+@router.delete("/{ship_id}/supplies/{supply_id}",
                status_code=status.HTTP_204_NO_CONTENT)
 def delete_supply(supply: Supply = Depends(get_supply_or_404),
                   service: ShipService = Depends(get_ship_service)):
