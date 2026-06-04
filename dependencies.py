@@ -59,10 +59,15 @@ def get_user_or_404(user_id: uuid.UUID,
                     service: UserService = Depends(get_user_service)) -> User:
     """Resolve a path's `user_id` to a User, or raise 404.
 
-    Lets user-scoped routes receive an already-validated `User` instead of
-    repeating the lookup-or-404 dance. `get_user_service` is shared with the
-    endpoint within a request (FastAPI caches dependencies), so this adds no
-    extra session or query wiring.
+    Args:
+        user_id: User identifier taken from the request path.
+        service: UserService, injected via `get_user_service`.
+
+    Returns:
+        The User matching `user_id`.
+
+    Raises:
+        HTTPException: 404 if no user matches `user_id`.
     """
     user = service.get_user_by_id(user_id)
     if user is None:
@@ -74,10 +79,15 @@ def get_ship_or_404(ship_id: uuid.UUID,
                     service: ShipService = Depends(get_ship_service)) -> Ship:
     """Resolve a path's `ship_id` to a Ship, or raise 404.
 
-    Lets ship-scoped routes receive an already-validated `Ship` instead of
-    repeating the lookup-or-404 dance. `get_ship_service` is shared with the
-    endpoint within a request (FastAPI caches dependencies), so this adds no
-    extra session or query wiring.
+    Args:
+        ship_id: Ship identifier taken from the request path.
+        service: ShipService, injected via `get_ship_service`.
+
+    Returns:
+        The Ship matching `ship_id`.
+
+    Raises:
+        HTTPException: 404 if no ship matches `ship_id`.
     """
     ship = service.get_ship_by_id(ship_id)
     if ship is None:
@@ -90,7 +100,19 @@ def get_ship_membership_or_404(
         ship: Ship = Depends(get_ship_or_404),
         service: UserService = Depends(get_user_service),
 ) -> ShipMember:
-    """Resolve the path's (user_id, ship_id) to a ShipMember, or raise 404."""
+    """Resolve the path's (user_id, ship_id) to a ShipMember, or raise 404.
+
+    Args:
+        user: User resolved from the path, injected via `get_user_or_404`.
+        ship: Ship resolved from the path, injected via `get_ship_or_404`.
+        service: UserService, injected via `get_user_service`.
+
+    Returns:
+        The ShipMember linking `user` to `ship`.
+
+    Raises:
+        HTTPException: 404 if `user` is not a member of `ship`.
+    """
     membership = service.get_ship_membership(user, ship)
     if membership is None:
         raise HTTPException(status_code=404,
@@ -107,6 +129,17 @@ def get_task_or_404(task_id: uuid.UUID,
     ship raises "Ship not found". The task must belong to that ship,
     so a `task_id` from another ship resolves to a
     "Task not found" rather than leaking across ships.
+
+    Args:
+        task_id: Task identifier taken from the request path.
+        ship: Ship resolved from the path, injected via `get_ship_or_404`.
+        service: ShipService, injected via `get_ship_service`.
+
+    Returns:
+        The Task matching `task_id` on `ship`.
+
+    Raises:
+        HTTPException: 404 if no task matches `task_id` on `ship`.
     """
     task = service.get_task(ship, task_id)
     if task is None:
@@ -124,6 +157,17 @@ def get_supply_or_404(supply_id: uuid.UUID,
     ship raises "Ship not found". The supply must belong to that ship,
     so a `supply_id` from another ship resolves to a "Supply not found"
     rather than leaking across ships.
+
+    Args:
+        supply_id: Supply identifier taken from the request path.
+        ship: Ship resolved from the path, injected via `get_ship_or_404`.
+        service: ShipService, injected via `get_ship_service`.
+
+    Returns:
+        The Supply matching `supply_id` on `ship`.
+
+    Raises:
+        HTTPException: 404 if no supply matches `supply_id` on `ship`.
     """
     supply = service.get_supply(ship, supply_id)
     if supply is None:
