@@ -22,6 +22,14 @@ from services import ShipService, UserService
 
 
 def get_user_service(session: Session = Depends(get_session)) -> UserService:
+    """Assemble a UserService on top of the request-scoped session.
+
+    Args:
+        session: Request-scoped session, injected via `get_session`.
+
+    Returns:
+        A UserService wired with the repositories it needs.
+    """
     return UserService(
         ship_repository=ShipRepository(session),
         ship_member_repository=ShipMemberRepository(session),
@@ -30,6 +38,14 @@ def get_user_service(session: Session = Depends(get_session)) -> UserService:
 
 
 def get_ship_service(session: Session = Depends(get_session)) -> ShipService:
+    """Assemble a ShipService on top of the request-scoped session.
+
+    Args:
+        session: Request-scoped session, injected via `get_session`.
+
+    Returns:
+        A ShipService wired with the repositories it needs.
+    """
     return ShipService(
         ship_repository=ShipRepository(session),
         ship_member_repository=ShipMemberRepository(session),
