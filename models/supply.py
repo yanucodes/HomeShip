@@ -112,15 +112,13 @@ class Supply(Base):
 
         if stock_state == StockState.IN_STOCK:
             return AlertState.GREEN
-        elif stock_state == StockState.RUNNING_LOW:
+        if stock_state == StockState.RUNNING_LOW:
             return AlertState.YELLOW
-        else:
-            if date_due is not None and date_due < today:
-                return AlertState.AUTO_DESTRUCT
-            elif date_due is None or date_due <= today + timedelta(days=1):
-                return AlertState.RED
-            else:
-                return AlertState.YELLOW
+        if date_due is not None and date_due < today:
+            return AlertState.AUTO_DESTRUCT
+        if date_due is None or date_due <= today + timedelta(days=1):
+            return AlertState.RED
+        return AlertState.YELLOW
 
 
     @classmethod
