@@ -7,7 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from models.alert_state import AlertState
-from schemas.validators import not_in_future
+from schemas.validators import not_in_future, not_in_past
 
 
 class TaskBase(BaseModel):
@@ -44,6 +44,17 @@ class TaskUpdate(BaseModel):
     rather than a generic edit.
     """
     content: str
+
+
+class TaskPostpone(BaseModel):
+    """Body for postponing a task: the new due date (today or later)."""
+    date_due: date
+
+    @field_validator("date_due")
+    @classmethod
+    def date_due_not_in_past(cls, value: date) -> date:
+        """A task can't be postponed to a date that has already passed."""
+        return not_in_past(value, date_description="date_due")
 
 
 class TaskRead(TaskBase):
