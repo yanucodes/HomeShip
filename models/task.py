@@ -103,7 +103,7 @@ class Task(Alertable, Base):
 
         Encapsulates "how to construct a valid task" in one place. The dates
         are filled in via `derive_dates` and the alert state via
-        `AlertState.on_creation`.
+        `AlertState.from_due_date`.
 
         Args:
             ship_id: ID of the ship the task belongs to.
@@ -126,5 +126,5 @@ class Task(Alertable, Base):
             frequency=frequency,
             date_last=date_last,
             date_due=date_due,
-            alert_state=AlertState.on_creation(date_due),
+            alert_state=AlertState.from_due_date(date_due),
         )

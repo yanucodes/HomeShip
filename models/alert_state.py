@@ -42,7 +42,7 @@ class AlertState(enum.Enum):
         return self
 
     @classmethod
-    def on_creation(cls, date_due: date | None) -> "AlertState":
+    def from_due_date(cls, date_due: date | None) -> "AlertState":
         """
         Derive the initial alert state for a newly created task or supply
         from its due date.
