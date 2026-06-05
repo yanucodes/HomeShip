@@ -125,6 +125,34 @@ class Task(Alertable, Base):
             "alert_state": self.alert_state.escalate()
         }
 
+
+    def get_changes_on_frequency_changing(self, frequency: timedelta | None,
+                                          today: date | None = None) -> dict:
+        """
+        Compute the field changes when changing the frequency of the task.
+
+        A new due date is set for recurrent tasks (date_last + frequency).
+        Alert is set according to due_date via `AlertState.from_due_date`.
+
+        Args:
+            frequency: New frequency for the task.
+            today: Reference date for derivation; defaults to `date.today()`.
+                Injectable to keep construction deterministic in tests.
+
+        Returns:
+            A `{field: value}` dict for `date_last`, `date_due`, and
+            `alert_state`.
+        """
+        date_last, date_due = self.derive_dates(
+            frequency, self.date_last, self.date_due, today
+        )
+        return {
+            "date_last": date_last,
+            "date_due": date_due,
+            "alert_state": AlertState.from_due_date(date_due)
+        }
+
+
     @classmethod
     def scheduled(
         cls,
