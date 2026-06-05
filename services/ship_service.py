@@ -4,7 +4,7 @@ import uuid
 from models import Ship, ShipMember, Supply, Task
 from repositories import (ShipMemberRepository, ShipRepository,
                           TaskRepository, SupplyRepository, UserRepository)
-from schemas import ShipMemberAdd, TaskCreate, SupplyCreate
+from schemas import ShipMemberAdd, TaskCreate, TaskUpdate, SupplyCreate
 
 
 class ShipService:
@@ -82,6 +82,20 @@ class ShipService:
         if task is not None and task.ship_id == ship.ship_id:
             return task
         return None
+
+    def update_task(self, task: Task, task_data: TaskUpdate) -> Task:
+        """
+        Update task content.
+
+        Args:
+            task: Task to update.
+            task_data: Validated fields from the request.
+
+        Returns:
+            Updated Task object.
+        """
+        changes = task_data.model_dump(exclude_unset=True)
+        return self.task_repository.update(task, changes)
 
     def delete_task(self, task: Task) -> None:
         """
