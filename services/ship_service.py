@@ -1,6 +1,7 @@
 """Service layer for Ship: orchestrates operations on ship, its tasks and
 supplies."""
 import uuid
+from datetime import date
 from models import Ship, ShipMember, Supply, Task
 from repositories import (ShipMemberRepository, ShipRepository,
                           TaskRepository, SupplyRepository, UserRepository)
@@ -108,6 +109,25 @@ class ShipService:
             Updated Task object.
         """
         return self.task_repository.update(task, task.get_changes_on_completing())
+
+    def postpone_task(self, task: Task, date_due: date) -> Task | None:
+        """
+        Postpone a task to a later due date, escalating its alert state.
+
+        Args:
+            task: Task to postpone.
+            date_due: New due date for the task.
+
+        Returns:
+            The updated Task, or None if the task cannot be postponed: it
+            has no active due date, or the new date is not later than the
+            current one. The caller turns None into a 400.
+        """
+        if task.date_due is None or date_due <= task.date_due:
+            return None
+        return self.task_repository.update(
+            task, task.get_changes_on_postponing(date_due)
+        )
 
     def delete_task(self, task: Task) -> None:
         """
