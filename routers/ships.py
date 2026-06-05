@@ -5,7 +5,8 @@ from dependencies import (get_ship_or_404, get_ship_service,
                           get_supply_or_404, get_task_or_404)
 from models import Ship, Supply, Task
 from schemas import (ShipRead, ShipMemberAdd, ShipMemberRead, SupplyCreate,
-                     SupplyRead, TaskCreate, TaskRead, TaskUpdate)
+                     SupplyRead, TaskCreate, TaskPostpone, TaskRead,
+                     TaskUpdate)
 from services import ShipService
 
 router = APIRouter(prefix="/ships", tags=["ships"])
@@ -123,6 +124,35 @@ def complete_task(task: Task = Depends(get_task_or_404),
         The updated Task serialized as `TaskRead`.
     """
     return service.complete_task(task)
+
+
+@router.post("/{ship_id}/tasks/{task_id}/postpone", response_model=TaskRead)
+def postpone_task(postpone_data: TaskPostpone,
+                  task: Task = Depends(get_task_or_404),
+                  service: ShipService = Depends(get_ship_service)):
+    """
+    Postpone a task to a later due date.
+
+    Pushes the due date out and escalates the task's alert state. Task is
+    only postponed if it belongs to the ship with the given ID. Otherwise,
+    Error 404 is raised.
+
+    Args:
+        postpone_data: Validated new due date from the request body.
+        task: Task to postpone, resolved from the path (404 if not found).
+        service: Ship service, injected by FastAPI via `get_ship_service`.
+
+    Returns:
+        The updated Task serialized as `TaskRead`.
+
+    Raises:
+        HTTPException: 400 if the task cannot be postponed (no active due
+            date, or the new date is not later than the current one).
+    """
+    updated_task = service.postpone_task(task, postpone_data.date_due)
+    if updated_task is None:
+        raise HTTPException(status_code=400, detail="Task cannot be postponed")
+    return updated_task
 
 
 @router.delete("/{ship_id}/tasks/{task_id}",
