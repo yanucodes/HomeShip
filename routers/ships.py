@@ -5,7 +5,7 @@ from dependencies import (get_ship_or_404, get_ship_service,
                           get_supply_or_404, get_task_or_404)
 from models import Ship, Supply, Task
 from schemas import (ShipRead, ShipMemberAdd, ShipMemberRead, SupplyCreate,
-                     SupplyRead, TaskCreate, TaskRead)
+                     SupplyRead, TaskCreate, TaskRead, TaskUpdate)
 from services import ShipService
 
 router = APIRouter(prefix="/ships", tags=["ships"])
@@ -82,6 +82,27 @@ def add_task(task_data: TaskCreate,
         The newly created Task serialized as `TaskRead`.
     """
     return service.create_task(ship, task_data)
+
+
+@router.patch("/{ship_id}/tasks/{task_id}", response_model=TaskRead)
+def update_task(task_data: TaskUpdate,
+                task: Task = Depends(get_task_or_404),
+                service: ShipService = Depends(get_ship_service)):
+    """
+    Update a task's editable attributes.
+
+    Task is only updated if it belongs to the ship with the given ID.
+    Otherwise, Error 404 is raised.
+
+    Args:
+        task_data: Validated task fields from the request body.
+        task: Task to update, resolved from the path (404 if not found).
+        service: Ship service, injected by FastAPI via `get_ship_service`.
+
+    Returns:
+        The updated Task serialized as `TaskRead`.
+    """
+    return service.update_task(task, task_data)
 
 
 @router.delete("/{ship_id}/tasks/{task_id}",
