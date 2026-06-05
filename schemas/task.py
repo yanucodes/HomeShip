@@ -42,8 +42,15 @@ class TaskCreate(TaskWrite):
     pass
 
 
-class TaskUpdate(TaskWrite):
-    content: str | None = None
+class TaskUpdate(BaseModel):
+    """Editable plain attributes of a task.
+
+    Covers the free-form fields a user edits directly (currently `content`).
+    The scheduling fields (`frequency`, `date_last`, `date_due`) are excluded:
+    they carry lifecycle logic and are changed through dedicated operations
+    rather than a generic edit.
+    """
+    content: str
 
 
 class TaskRead(TaskBase):
