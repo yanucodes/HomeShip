@@ -97,6 +97,18 @@ class ShipService:
         changes = task_data.model_dump(exclude_unset=True)
         return self.task_repository.update(task, changes)
 
+    def complete_task(self, task: Task) -> Task:
+        """
+        Complete the task. Updates date_last, date_due, and alert_state.
+
+        Args:
+            task: Task which was completed.
+
+        Returns:
+            Updated Task object.
+        """
+        return self.task_repository.update(task, task.get_completion_changes())
+
     def delete_task(self, task: Task) -> None:
         """
         Delete task from the ship.
