@@ -69,10 +69,10 @@ class Task(Alertable, Base):
         The three date-related fields are all optional, and their
         combination encodes the task's lifecycle:
 
-        * recurring (`frequency` set): default `date_last` to today and, if
-          no `date_due` was given, set it to `date_last + frequency`.
+        * recurring (`frequency` set): default `date_last` to today or, if
+          no `date_last` was given, set `date_due` to `date_last + frequency`.
         * one-off with a deadline (no `frequency`, `date_due` given): clear
-          `date_last` — a one-off task hasn't been "last done".
+          `date_last` — `date_last` is not tracked for a one-off task.
         * inactive (neither given): leave both null.
 
         Returns:
@@ -81,9 +81,8 @@ class Task(Alertable, Base):
         today = today or date.today()
         if frequency:
             date_last = date_last or today
-            if date_due is None:
-                date_due = date_last + frequency
-        elif date_due is not None:
+            date_due = date_last + frequency
+        else:
             date_last = None
         return date_last, date_due
 
