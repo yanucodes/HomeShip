@@ -87,6 +87,25 @@ class Task(Alertable, Base):
             date_last = None
         return date_last, date_due
 
+    def get_completion_changes(self, today: date | None = None) -> dict:
+        """Compute the field changes when completing the task.
+
+        Args:
+            today: Reference date for completion; defaults to `date.today()`.
+                Injectable to keep the logic deterministic in tests.
+
+        Returns:
+            A `{field: value}` dict for `date_last`, `date_due`, and
+            `alert_state` reflecting the completion.
+        """
+        today = today or date.today()
+        date_due = today + self.frequency if self.frequency else None
+        return {
+            "date_last": today,
+            "date_due": date_due,
+            "alert_state": AlertState.from_due_date(date_due)
+        }
+
     @classmethod
     def scheduled(
         cls,
