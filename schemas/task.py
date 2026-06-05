@@ -57,6 +57,10 @@ class TaskPostpone(BaseModel):
         return not_in_past(value, date_description="date_due")
 
 
+class FrequencyChange(BaseModel):
+    frequency: timedelta | None
+
+
 class TaskRead(TaskBase):
     task_id: UUID
     ship_id: UUID

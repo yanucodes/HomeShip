@@ -8,11 +8,11 @@ from .ship_member import (
     ShipMemberUpdate,
 )
 from .supply import SupplyCreate, SupplyRead, SupplyUpdate
-from .task import TaskCreate, TaskRead, TaskUpdate
+from .task import FrequencyChange, TaskCreate, TaskRead, TaskUpdate
 from .user import UserCreate, UserRead, UserUpdate
 
 __all__ = ["ShipCreate", "ShipRead", "ShipUpdate", "ShipMemberAdd",
            "ShipMemberCreate",
            "ShipMemberRead", "ShipMemberUpdate", "SupplyCreate",
-           "SupplyRead", "SupplyUpdate", "TaskCreate", "TaskRead",
-           "TaskUpdate", "UserCreate", "UserRead", "UserUpdate", ]
+           "SupplyRead", "SupplyUpdate", "FrequencyChange", "TaskCreate",
+           "TaskRead", "TaskUpdate", "UserCreate", "UserRead", "UserUpdate", ]
