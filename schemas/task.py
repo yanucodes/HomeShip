@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from models.alert_state import AlertState
+from schemas.validators import not_in_future
 
 
 class TaskBase(BaseModel):
@@ -26,9 +27,7 @@ class TaskWrite(TaskBase):
     @classmethod
     def date_last_not_in_future(cls, value: date | None) -> date | None:
         """A task can't have last been done after today."""
-        if value is not None and value > date.today():
-            raise ValueError("date_last must not be in the future")
-        return value
+        return not_in_future(value, date_description="date_last")
 
     @model_validator(mode="after")
     def date_due_not_before_date_last(self) -> Self:

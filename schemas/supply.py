@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 from models.alert_state import AlertState
 from models.supply import StockState
+from schemas.validators import not_in_past
 
 
 class SupplyBase(BaseModel):
@@ -23,9 +24,7 @@ class SupplyWrite(SupplyBase):
     @classmethod
     def date_due_not_in_past(cls, value: date | None) -> date | None:
         """Deadline for buying a supply cannot be in the past."""
-        if value is not None and value < date.today():
-            raise ValueError("date_due must not be in the past")
-        return value
+        return not_in_past(value, date_description="date_due")
 
 
 class SupplyCreate(SupplyWrite):
