@@ -107,7 +107,7 @@ class ShipService:
         Returns:
             Updated Task object.
         """
-        return self.task_repository.update(task, task.get_completion_changes())
+        return self.task_repository.update(task, task.get_changes_on_completing())
 
     def delete_task(self, task: Task) -> None:
         """

@@ -87,7 +87,7 @@ class Task(Alertable, Base):
             date_last = None
         return date_last, date_due
 
-    def get_completion_changes(self, today: date | None = None) -> dict:
+    def get_changes_on_completing(self, today: date | None = None) -> dict:
         """Compute the field changes when completing the task.
 
         Args:
