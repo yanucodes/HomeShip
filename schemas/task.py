@@ -19,10 +19,7 @@ class TaskBase(BaseModel):
     date_due: date | None = None
 
 
-class TaskWrite(TaskBase):
-    """Base for request schemas: shared fields plus the input validation
-    common to creating and updating a task."""
-
+class TaskCreate(TaskBase):
     @field_validator("date_last")
     @classmethod
     def date_last_not_in_future(cls, value: date | None) -> date | None:
@@ -36,10 +33,6 @@ class TaskWrite(TaskBase):
                 and self.date_due < self.date_last):
             raise ValueError("date_due must not be before date_last")
         return self
-
-
-class TaskCreate(TaskWrite):
-    pass
 
 
 class TaskUpdate(BaseModel):
