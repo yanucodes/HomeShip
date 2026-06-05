@@ -106,6 +106,25 @@ class Task(Alertable, Base):
             "alert_state": AlertState.from_due_date(date_due)
         }
 
+    def get_changes_on_postponing(self, date_due: date) -> dict:
+        """Compute the field changes when postponing the task.
+
+        Postponing pushes the due date out and raises the alert one level
+        (GREEN -> YELLOW -> RED -> AUTO_DESTRUCT) via `AlertState.escalate`,
+        so repeated postponements surface increasing urgency.
+
+        Args:
+            date_due: New due date for the task, already validated by the
+                `TaskPostpone` schema.
+
+        Returns:
+            A `{field: value}` dict for `date_due` and `alert_state`.
+        """
+        return {
+            "date_due": date_due,
+            "alert_state": self.alert_state.escalate()
+        }
+
     @classmethod
     def scheduled(
         cls,
