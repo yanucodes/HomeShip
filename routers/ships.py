@@ -105,6 +105,26 @@ def update_task(task_data: TaskUpdate,
     return service.update_task(task, task_data)
 
 
+@router.post("/{ship_id}/tasks/{task_id}/complete", response_model=TaskRead)
+def complete_task(task: Task = Depends(get_task_or_404),
+                  service: ShipService = Depends(get_ship_service)):
+    """
+    Mark a task as completed.
+
+    Records completion as of today, recomputing the task's due date and
+    alert state. Task is only completed if it belongs to the ship with the
+    given ID. Otherwise, Error 404 is raised.
+
+    Args:
+        task: Task to complete, resolved from the path (404 if not found).
+        service: Ship service, injected by FastAPI via `get_ship_service`.
+
+    Returns:
+        The updated Task serialized as `TaskRead`.
+    """
+    return service.complete_task(task)
+
+
 @router.delete("/{ship_id}/tasks/{task_id}",
                status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(task: Task = Depends(get_task_or_404),
