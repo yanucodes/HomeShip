@@ -1,7 +1,7 @@
 """Service layer for Ship: orchestrates operations on ship, its tasks and
 supplies."""
 import uuid
-from datetime import date
+from datetime import date, timedelta
 from models import Ship, ShipMember, Supply, Task
 from repositories import (ShipMemberRepository, ShipRepository,
                           TaskRepository, SupplyRepository, UserRepository)
@@ -128,6 +128,26 @@ class ShipService:
         return self.task_repository.update(
             task, task.get_changes_on_postponing(date_due)
         )
+
+    def change_task_frequency(
+        self, task: Task, new_frequency: timedelta | None
+    ) -> Task:
+        """
+        Change the frequency of a task.
+
+        Re-derives the task's schedule (date_last, date_due) and alert
+        state from the new frequency via
+        `Task.get_changes_on_frequency_changing`.
+
+        Args:
+            task: Task whose frequency is being changed.
+            new_frequency: Validated new frequency from the request body.
+
+        Returns:
+            The updated task.
+        """
+        return self.task_repository.update(
+            task, task.get_changes_on_frequency_changing(new_frequency))
 
     def delete_task(self, task: Task) -> None:
         """
