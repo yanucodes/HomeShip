@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from dependencies import (get_ship_or_404, get_ship_service,
                           get_supply_or_404, get_task_or_404)
 from models import Ship, Supply, Task
-from schemas import (ShipRead, ShipMemberAdd, ShipMemberRead, SupplyCreate,
-                     SupplyRead, TaskCreate, TaskPostpone, TaskRead,
-                     TaskUpdate)
+from schemas import (FrequencyChange, ShipRead, ShipMemberAdd, ShipMemberRead,
+                     SupplyCreate, SupplyRead, TaskCreate, TaskPostpone,
+                     TaskRead, TaskUpdate)
 from services import ShipService
 
 router = APIRouter(prefix="/ships", tags=["ships"])
@@ -153,6 +153,29 @@ def postpone_task(postpone_data: TaskPostpone,
     if updated_task is None:
         raise HTTPException(status_code=400, detail="Task cannot be postponed")
     return updated_task
+
+
+@router.post("/{ship_id}/tasks/{task_id}/change_frequency",
+             response_model=TaskRead)
+def change_task_frequency(frequency_data: FrequencyChange,
+                          task: Task = Depends(get_task_or_404),
+                          service: ShipService = Depends(get_ship_service)):
+    """
+    Change a task's frequency.
+
+    Re-derives the task's schedule and alert state from the new frequency.
+    Task is only changed if it belongs to the ship with the given ID.
+    Otherwise, Error 404 is raised.
+
+    Args:
+        frequency_data: Validated new frequency from the request body.
+        task: Task to update, resolved from the path (404 if not found).
+        service: Ship service, injected by FastAPI via `get_ship_service`.
+
+    Returns:
+        The updated Task serialized as `TaskRead`.
+    """
+    return service.change_task_frequency(task, frequency_data.frequency)
 
 
 @router.delete("/{ship_id}/tasks/{task_id}",
