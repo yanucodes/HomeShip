@@ -139,13 +139,14 @@ class Task(Alertable, Base):
                 Injectable to keep construction deterministic in tests.
 
         Returns:
-            A `{field: value}` dict for `date_last`, `date_due`, and
-            `alert_state`.
+            A `{field: value}` dict for `frequency`, `date_last`,
+            `date_due`, and `alert_state`.
         """
         date_last, date_due = self.derive_dates(
             frequency, self.date_last, self.date_due, today
         )
         return {
+            "frequency": frequency,
             "date_last": date_last,
             "date_due": date_due,
             "alert_state": AlertState.from_due_date(date_due)
