@@ -5,8 +5,8 @@ from dependencies import (get_ship_or_404, get_ship_service,
                           get_supply_or_404, get_task_or_404)
 from models import Ship, Supply, Task
 from schemas import (FrequencyChange, ShipRead, ShipMemberAdd, ShipMemberRead,
-                     SupplyCreate, SupplyRead, TaskCreate, TaskPostpone,
-                     TaskRead, TaskUpdate)
+                     SupplyCreate, SupplyRead, SupplyUpdate, TaskCreate,
+                     TaskPostpone, TaskRead, TaskUpdate)
 from services import ShipService
 
 router = APIRouter(prefix="/ships", tags=["ships"])
@@ -283,6 +283,27 @@ def add_supply(supply_data: SupplyCreate,
         The newly created Supply serialized as `SupplyRead`.
     """
     return service.create_supply(ship, supply_data)
+
+
+@router.patch("/{ship_id}/supplies/{supply_id}", response_model=SupplyRead)
+def update_supply(supply_data: SupplyUpdate,
+                  supply: Supply = Depends(get_supply_or_404),
+                  service: ShipService = Depends(get_ship_service)):
+    """
+    Update a supply's editable attributes.
+
+    Supply is only updated if it belongs to the ship with the given ID.
+    Otherwise, Error 404 is raised.
+
+    Args:
+        supply_data: Validated supply fields from the request body.
+        supply: Supply to update, resolved from the path (404 if not found).
+        service: Ship service, injected by FastAPI via `get_ship_service`.
+
+    Returns:
+        The updated Supply serialized as `SupplyRead`.
+    """
+    return service.update_supply(supply, supply_data)
 
 
 @router.delete("/{ship_id}/supplies/{supply_id}",

@@ -5,7 +5,8 @@ from datetime import date, timedelta
 from models import Ship, ShipMember, Supply, Task
 from repositories import (ShipMemberRepository, ShipRepository,
                           TaskRepository, SupplyRepository, UserRepository)
-from schemas import ShipMemberAdd, TaskCreate, TaskUpdate, SupplyCreate
+from schemas import (ShipMemberAdd, TaskCreate, TaskUpdate, SupplyCreate,
+                     SupplyUpdate)
 
 
 class ShipService:
@@ -224,6 +225,21 @@ class ShipService:
         if supply is not None and supply.ship_id == ship.ship_id:
             return supply
         return None
+
+    def update_supply(self, supply: Supply, supply_data: SupplyUpdate
+                      ) -> Supply:
+        """
+        Update a supply's editable attributes (name, quantity).
+
+        Args:
+            supply: Supply to update.
+            supply_data: Validated fields from the request.
+
+        Returns:
+            Updated Supply object.
+        """
+        changes = supply_data.model_dump(exclude_unset=True)
+        return self.supply_repository.update(supply, changes)
 
     def delete_supply(self, supply: Supply) -> None:
         """

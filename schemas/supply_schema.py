@@ -44,6 +44,19 @@ class SupplyRead(SupplyBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class SupplyUpdate(SupplyWrite):
+class SupplyUpdate(BaseModel):
+    """Editable plain attributes of a supply.
+
+    Covers the free-form fields a user edits directly (`name`, `quantity`).
+    The lifecycle fields (`stock_state`, `date_due`) are excluded: they drive
+    the alert state and are changed through dedicated operations rather than a
+    generic edit.
+    """
     name: str | None = None
-    stock_state: StockState | None = None
+    quantity: int | None = None
+
+    @field_validator("quantity")
+    @classmethod
+    def quantity_non_negative(cls, value: int | None) -> int | None:
+        """A supply's quantity on hand cannot be negative."""
+        return non_negative(value, field_description="quantity")
