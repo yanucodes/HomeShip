@@ -1,15 +1,15 @@
 """Pydantic schemas for HomeShip"""
 
-from .ship import ShipCreate, ShipRead, ShipUpdate
-from .ship_member import (
+from .ship_schema import ShipCreate, ShipRead, ShipUpdate
+from .ship_member_schema import (
     ShipMemberAdd,
     ShipMemberCreate,
     ShipMemberRead,
     ShipMemberUpdate,
 )
-from .supply import SupplyCreate, SupplyRead, SupplyUpdate
-from .task import FrequencyChange, TaskCreate, TaskRead, TaskUpdate
-from .user import UserCreate, UserRead, UserUpdate
+from .supply_schema import SupplyCreate, SupplyRead, SupplyUpdate
+from .task_schema import FrequencyChange, TaskCreate, TaskRead, TaskUpdate
+from .user_schema import UserCreate, UserRead, UserUpdate
 
 __all__ = ["ShipCreate", "ShipRead", "ShipUpdate", "ShipMemberAdd",
            "ShipMemberCreate",
