@@ -272,6 +272,22 @@ class ShipService:
         return self.supply_repository.update(
             supply, supply.get_changes_on_reschedule(date_due))
 
+    def deactivate_supply(self, supply: Supply) -> Supply:
+        """
+        Deactivate a supply (stop tracking it).
+
+        Clears the supply's buy-by deadline and quantity and drops its
+        alert_state to INACTIVE.
+
+        Args:
+            supply: Supply to deactivate.
+
+        Returns:
+            The updated supply.
+        """
+        return self.supply_repository.update(
+            supply, supply.get_changes_on_deactivation())
+
     def delete_supply(self, supply: Supply) -> None:
         """
         Delete supply from the ship.

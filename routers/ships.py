@@ -393,6 +393,29 @@ def reschedule_supply(reschedule_data: SupplyReschedule,
     return service.reschedule_supply(supply, reschedule_data.date_due)
 
 
+@router.post("/{ship_id}/supplies/{supply_id}/deactivate",
+             response_model=SupplyRead)
+def deactivate_supply(supply: Supply = Depends(get_supply_or_404),
+                      service: ShipService = Depends(get_ship_service)):
+    """
+    Deactivate a supply (stop tracking it).
+
+    Clears the supply's buy-by deadline and quantity and drops its alert state
+    to INACTIVE. Supply is only deactivated if it belongs to the ship with the
+    given ID.
+    Otherwise, Error 404 is raised.
+
+    Args:
+        supply: Supply to deactivate, resolved from the path (404 if not
+            found).
+        service: Ship service, injected by FastAPI via `get_ship_service`.
+
+    Returns:
+        The updated Supply serialized as `SupplyRead`.
+    """
+    return service.deactivate_supply(supply)
+
+
 @router.delete("/{ship_id}/supplies/{supply_id}",
                status_code=status.HTTP_204_NO_CONTENT)
 def delete_supply(supply: Supply = Depends(get_supply_or_404),

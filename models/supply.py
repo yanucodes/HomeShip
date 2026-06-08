@@ -195,3 +195,21 @@ class Supply(Alertable, Base):
             "date_due": date_due,
             "alert_state": self.derive_alert(self.stock_state, date_due, today)
         }
+
+    def get_changes_on_deactivation(self) -> dict:
+        """Return the field changes when the supply is deactivated.
+
+        Deactivating stops tracking the supply: its buy-by deadline and
+        quantity are cleared and its alert drops to INACTIVE. The stock state
+        is kept (it is non-nullable and no longer feeds the alert once the
+        supply is untracked).
+
+        Returns:
+            A `{field: value}` dict for `date_due`, `quantity`, and
+            `alert_state`.
+        """
+        return {
+            "date_due": None,
+            "quantity": None,
+            "alert_state": AlertState.INACTIVE
+        }
