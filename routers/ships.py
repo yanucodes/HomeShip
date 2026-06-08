@@ -249,6 +249,23 @@ def get_supplies(ship: Ship = Depends(get_ship_or_404),
     return service.get_supplies(ship)
 
 
+@router.get("/{ship_id}/supplies/{supply_id}", response_model=SupplyRead)
+def get_supply(supply: Supply = Depends(get_supply_or_404)):
+    """
+    Get a single supply belonging to the ship.
+
+    Supply is only returned if it belongs to the ship with the given ID.
+    Otherwise, Error 404 is raised.
+
+    Args:
+        supply: Supply resolved from the path (404 if not found).
+
+    Returns:
+        The Supply serialized as `SupplyRead`.
+    """
+    return supply
+
+
 @router.post("/{ship_id}/supplies", response_model=SupplyRead,
              status_code=status.HTTP_201_CREATED)
 def add_supply(supply_data: SupplyCreate,
