@@ -7,7 +7,11 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from models.alert_state import AlertState
-from schemas.validators import not_in_future, not_in_past
+from schemas.validators import (
+    not_in_future,
+    not_in_past,
+    positive_timedelta,
+)
 
 
 class TaskBase(BaseModel):
@@ -20,6 +24,14 @@ class TaskBase(BaseModel):
 
 
 class TaskCreate(TaskBase):
+    @field_validator("frequency")
+    @classmethod
+    def frequency_positive(
+        cls, value: timedelta | None
+    ) -> timedelta | None:
+        """A recurring task's frequency must be a positive interval."""
+        return positive_timedelta(value, field_description="frequency")
+
     @field_validator("date_last")
     @classmethod
     def date_last_not_in_future(cls, value: date | None) -> date | None:
@@ -59,6 +71,14 @@ class TaskPostpone(BaseModel):
 
 class FrequencyChange(BaseModel):
     frequency: timedelta | None
+
+    @field_validator("frequency")
+    @classmethod
+    def frequency_positive(
+        cls, value: timedelta | None
+    ) -> timedelta | None:
+        """A recurring task's frequency must be a positive interval."""
+        return positive_timedelta(value, field_description="frequency")
 
 
 class TaskRead(TaskBase):

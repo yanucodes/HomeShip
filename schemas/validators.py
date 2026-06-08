@@ -1,6 +1,6 @@
 """Reusable field validators for HomeShip schemas."""
 
-from datetime import date
+from datetime import date, timedelta
 
 
 def not_in_future(
@@ -42,4 +42,25 @@ def not_in_past(
     """
     if value is not None and value < date.today():
         raise ValueError(f"{date_description} must not be in the past")
+    return value
+
+
+def positive_timedelta(
+    value: timedelta | None, *, field_description: str = "duration"
+) -> timedelta | None:
+    """Reject a duration (if provided) that is not strictly positive.
+
+    Args:
+        value: The duration to check, or None. Accepts None for optional
+            duration fields.
+        field_description: Name of the field, used to make the error message.
+
+    Returns:
+        The unchanged value if valid. None if the duration was not provided.
+
+    Raises:
+        ValueError: If the duration is zero or negative.
+    """
+    if value is not None and value <= timedelta(0):
+        raise ValueError(f"{field_description} must be positive")
     return value
