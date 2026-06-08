@@ -8,7 +8,7 @@ from .ship_member_schema import (
     ShipMemberUpdate,
 )
 from .supply_schema import (SupplyCreate, SupplyRead, SupplyUpdate,
-                            StockStateChange)
+                            StockStateChange, SupplyReschedule)
 from .task_schema import (FrequencyChange, TaskCreate, TaskRead, TaskPostpone,
                           TaskUpdate)
 from .user_schema import UserCreate, UserPublic, UserRead, UserUpdate
@@ -16,6 +16,7 @@ from .user_schema import UserCreate, UserPublic, UserRead, UserUpdate
 __all__ = ["ShipCreate", "ShipRead", "ShipUpdate", "ShipMemberAdd",
            "ShipMemberCreate", "ShipMemberRead", "ShipMemberUpdate",
            "SupplyCreate", "SupplyRead", "SupplyUpdate", "StockStateChange",
+           "SupplyReschedule",
            "FrequencyChange", "TaskCreate", "TaskRead", "TaskPostpone",
            "TaskUpdate", "UserCreate", "UserPublic", "UserRead",
            "UserUpdate", ]

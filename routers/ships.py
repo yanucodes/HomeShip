@@ -6,8 +6,8 @@ from dependencies import (get_ship_membership_or_404, get_ship_or_404,
 from models import Ship, ShipMember, Supply, Task
 from schemas import (FrequencyChange, ShipRead, ShipMemberAdd, ShipMemberRead,
                      ShipMemberUpdate, StockStateChange, SupplyCreate,
-                     SupplyRead, SupplyUpdate, TaskCreate, TaskPostpone,
-                     TaskRead, TaskUpdate)
+                     SupplyRead, SupplyReschedule, SupplyUpdate, TaskCreate,
+                     TaskPostpone, TaskRead, TaskUpdate)
 from services import ShipService
 
 router = APIRouter(prefix="/ships", tags=["ships"])
@@ -368,6 +368,29 @@ def change_supply_stock_state(stock_state_data: StockStateChange,
     """
     return service.change_supply_stock_state(
         supply, stock_state_data.stock_state)
+
+
+@router.post("/{ship_id}/supplies/{supply_id}/reschedule",
+             response_model=SupplyRead)
+def reschedule_supply(reschedule_data: SupplyReschedule,
+                      supply: Supply = Depends(get_supply_or_404),
+                      service: ShipService = Depends(get_ship_service)):
+    """
+    Reschedule a supply's buy-by deadline.
+
+    Re-derives the supply's alert state from the new deadline. Supply is only
+    changed if it belongs to the ship with the given ID. Otherwise, Error 404
+    is raised.
+
+    Args:
+        reschedule_data: Validated new buy-by deadline from the request body.
+        supply: Supply to update, resolved from the path (404 if not found).
+        service: Ship service, injected by FastAPI via `get_ship_service`.
+
+    Returns:
+        The updated Supply serialized as `SupplyRead`.
+    """
+    return service.reschedule_supply(supply, reschedule_data.date_due)
 
 
 @router.delete("/{ship_id}/supplies/{supply_id}",

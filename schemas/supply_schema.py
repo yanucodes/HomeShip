@@ -65,3 +65,14 @@ class SupplyUpdate(BaseModel):
 class StockStateChange(BaseModel):
     """Body for changing a supply's stock state."""
     stock_state: StockState
+
+
+class SupplyReschedule(BaseModel):
+    """Body for rescheduling a supply's buy-by deadline (today or later)."""
+    date_due: date
+
+    @field_validator("date_due")
+    @classmethod
+    def date_due_not_in_past(cls, value: date) -> date:
+        """A supply's buy-by deadline cannot be moved into the past."""
+        return not_in_past(value, date_description="date_due")

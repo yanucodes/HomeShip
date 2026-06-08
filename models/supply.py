@@ -172,3 +172,26 @@ class Supply(Alertable, Base):
             "stock_state": stock_state,
             "alert_state": self.derive_alert(stock_state, self.date_due, today)
         }
+
+    def get_changes_on_reschedule(
+        self, date_due: date, today: date | None = None
+    ) -> dict:
+        """Compute the field changes when the supply's deadline is rescheduled.
+
+        Re-derives the alert from the supply's current stock state and the new
+        deadline via `derive_alert`, so moving the buy-by date adjusts the
+        urgency.
+
+        Args:
+            date_due: New buy-by deadline for the supply, already validated by
+                the `SupplyReschedule` schema.
+            today: Reference date for derivation; defaults to `date.today()`.
+                Injectable to keep the logic deterministic in tests.
+
+        Returns:
+            A `{field: value}` dict for `date_due` and `alert_state`.
+        """
+        return {
+            "date_due": date_due,
+            "alert_state": self.derive_alert(self.stock_state, date_due, today)
+        }

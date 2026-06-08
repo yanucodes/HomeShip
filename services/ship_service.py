@@ -258,6 +258,20 @@ class ShipService:
         return self.supply_repository.update(
             supply, supply.get_changes_on_stock_state_change(stock_state))
 
+    def reschedule_supply(self, supply: Supply, date_due: date) -> Supply:
+        """
+        Reschedule a supply's buy-by deadline, re-deriving its alert state.
+
+        Args:
+            supply: Supply whose deadline is being rescheduled.
+            date_due: Validated new buy-by deadline from the request body.
+
+        Returns:
+            The updated supply.
+        """
+        return self.supply_repository.update(
+            supply, supply.get_changes_on_reschedule(date_due))
+
     def delete_supply(self, supply: Supply) -> None:
         """
         Delete supply from the ship.
