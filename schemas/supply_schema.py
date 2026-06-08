@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 from models.alert_state import AlertState
 from models.supply import StockState
-from schemas.validators import not_in_past
+from schemas.validators import non_negative, not_in_past
 
 
 class SupplyBase(BaseModel):
@@ -19,6 +19,12 @@ class SupplyBase(BaseModel):
 
 class SupplyWrite(SupplyBase):
     """Base for request schemas: shared fields plus the input validation."""
+
+    @field_validator("quantity")
+    @classmethod
+    def quantity_non_negative(cls, value: int | None) -> int | None:
+        """A supply's quantity on hand cannot be negative."""
+        return non_negative(value, field_description="quantity")
 
     @field_validator("date_due")
     @classmethod

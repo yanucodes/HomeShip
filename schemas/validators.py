@@ -64,3 +64,24 @@ def positive_timedelta(
     if value is not None and value <= timedelta(0):
         raise ValueError(f"{field_description} must be positive")
     return value
+
+
+def non_negative(
+    value: int | None, *, field_description: str = "value"
+) -> int | None:
+    """Reject an integer (if provided) below zero.
+
+    Args:
+        value: The integer to check, or None. Accepts None for optional
+            fields.
+        field_description: Name of the field, used to make the error message.
+
+    Returns:
+        The unchanged value if valid. None if the value was not provided.
+
+    Raises:
+        ValueError: If the integer is negative.
+    """
+    if value is not None and value < 0:
+        raise ValueError(f"{field_description} must not be negative")
+    return value
