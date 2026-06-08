@@ -1,8 +1,8 @@
-"""Authentication and password helpers.
+"""Authentication and password helpers."""
 
-NOTE: the current implementation is a PLACEHOLDER. It does NOT actually
-secure passwords.
-"""
+from passlib.context import CryptContext
+
+_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
@@ -12,10 +12,6 @@ def hash_password(password: str) -> str:
         password: The plain-text password from the signup request.
 
     Returns:
-        A string to persist as `password_hash`.
-
-    WARNING: this is a stand-in. It performs NO real hashing and provides NO
-    security — it only lets the rest of the app be built end-to-end. Swap in
-    a real hash before any real password is ever stored.
+        A bcrypt hash string to persist as `password_hash`.
     """
-    return f"placeholder-hash:{password}"
+    return _pwd_context.hash(password)
