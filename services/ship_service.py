@@ -5,8 +5,8 @@ from datetime import date, timedelta
 from models import Ship, ShipMember, Supply, Task
 from repositories import (ShipMemberRepository, ShipRepository,
                           TaskRepository, SupplyRepository, UserRepository)
-from schemas import (ShipMemberAdd, TaskCreate, TaskUpdate, SupplyCreate,
-                     SupplyUpdate)
+from schemas import (ShipMemberAdd, ShipMemberUpdate, TaskCreate, TaskUpdate,
+                     SupplyCreate, SupplyUpdate)
 
 
 class ShipService:
@@ -272,3 +272,18 @@ class ShipService:
         )
         self.ship_member_repository.add(new_member)
         return new_member
+
+    def update_ship_member(self, membership: ShipMember,
+                           member_data: ShipMemberUpdate) -> ShipMember:
+        """
+        Update a crew member's editable attributes (role).
+
+        Args:
+            membership: Ship membership to update.
+            member_data: Validated member fields from the request.
+
+        Returns:
+            Updated ShipMember object.
+        """
+        changes = member_data.model_dump(exclude_unset=True)
+        return self.ship_member_repository.update(membership, changes)

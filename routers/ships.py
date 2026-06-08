@@ -1,12 +1,12 @@
 """Ship endpoints."""
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from dependencies import (get_ship_or_404, get_ship_service,
-                          get_supply_or_404, get_task_or_404)
-from models import Ship, Supply, Task
+from dependencies import (get_ship_membership_or_404, get_ship_or_404,
+                          get_ship_service, get_supply_or_404, get_task_or_404)
+from models import Ship, ShipMember, Supply, Task
 from schemas import (FrequencyChange, ShipRead, ShipMemberAdd, ShipMemberRead,
-                     SupplyCreate, SupplyRead, SupplyUpdate, TaskCreate,
-                     TaskPostpone, TaskRead, TaskUpdate)
+                     ShipMemberUpdate, SupplyCreate, SupplyRead, SupplyUpdate,
+                     TaskCreate, TaskPostpone, TaskRead, TaskUpdate)
 from services import ShipService
 
 router = APIRouter(prefix="/ships", tags=["ships"])
@@ -47,6 +47,28 @@ def add_member(member_data: ShipMemberAdd,
     if member is None:
         raise HTTPException(status_code=404, detail="User not found")
     return member
+
+
+@router.patch("/{ship_id}/members/{user_id}", response_model=ShipMemberRead)
+def update_member(member_data: ShipMemberUpdate,
+                  membership: ShipMember = Depends(get_ship_membership_or_404),
+                  service: ShipService = Depends(get_ship_service)):
+    """
+    Change a crew member's role on the ship.
+
+    Membership is resolved from the path's `ship_id` and `user_id`; a 404 is
+    raised if that user is not a member of the ship.
+
+    Args:
+        member_data: Validated member fields from the request body.
+        membership: Ship membership resolved from the path (404 if the user
+            is not a member of the ship).
+        service: Ship service, injected by FastAPI via `get_ship_service`.
+
+    Returns:
+        The updated ShipMember serialized as `ShipMemberRead`.
+    """
+    return service.update_ship_member(membership, member_data)
 
 
 @router.get("/{ship_id}/tasks", response_model=list[TaskRead])
