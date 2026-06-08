@@ -151,6 +151,20 @@ class Task(Alertable, Base):
             "alert_state": AlertState.from_due_date(date_due)
         }
 
+    def get_changes_on_deactivation(self) -> dict:
+        """
+        Return the field changes when task is deactivated.
+
+        Returns:
+            A `{field: value}` dict for `frequency`, `date_last`,
+            `date_due`, and `alert_state`.
+        """
+        return {
+            "frequency": None,
+            "date_last": None,
+            "date_due": None,
+            "alert_state": AlertState.INACTIVE
+        }
 
     @classmethod
     def scheduled(
