@@ -3,6 +3,7 @@ supplies."""
 import uuid
 from datetime import date, timedelta
 from models import Ship, ShipMember, Supply, Task
+from models.supply import StockState
 from repositories import (ShipMemberRepository, ShipRepository,
                           TaskRepository, SupplyRepository, UserRepository)
 from schemas import (ShipMemberAdd, ShipMemberUpdate, TaskCreate, TaskUpdate,
@@ -240,6 +241,22 @@ class ShipService:
         """
         changes = supply_data.model_dump(exclude_unset=True)
         return self.supply_repository.update(supply, changes)
+
+    def change_supply_stock_state(
+        self, supply: Supply, stock_state: StockState
+    ) -> Supply:
+        """
+        Change a supply's stock state, re-deriving its alert state.
+
+        Args:
+            supply: Supply whose stock state is being changed.
+            stock_state: Validated new stock state from the request body.
+
+        Returns:
+            The updated supply.
+        """
+        return self.supply_repository.update(
+            supply, supply.get_changes_on_stock_state_change(stock_state))
 
     def delete_supply(self, supply: Supply) -> None:
         """

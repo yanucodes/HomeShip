@@ -149,3 +149,26 @@ class Supply(Alertable, Base):
             date_due=date_due,
             alert_state=cls.derive_alert(stock_state, date_due, today),
         )
+
+    def get_changes_on_stock_state_change(
+        self, stock_state: StockState, today: date | None = None
+    ) -> dict:
+        """Compute the field changes when the supply's stock state changes.
+
+        Re-derives the alert from the new stock state and the supply's
+        existing deadline via `derive_alert`, so the signal stays consistent
+        with the stock level. `quantity` is left untouched — it is an
+        independent dimension that does not feed the alert.
+
+        Args:
+            stock_state: New stock state for the supply.
+            today: Reference date for derivation; defaults to `date.today()`.
+                Injectable to keep the logic deterministic in tests.
+
+        Returns:
+            A `{field: value}` dict for `stock_state` and `alert_state`.
+        """
+        return {
+            "stock_state": stock_state,
+            "alert_state": self.derive_alert(stock_state, self.date_due, today)
+        }

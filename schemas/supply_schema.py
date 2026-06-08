@@ -60,3 +60,8 @@ class SupplyUpdate(BaseModel):
     def quantity_non_negative(cls, value: int | None) -> int | None:
         """A supply's quantity on hand cannot be negative."""
         return non_negative(value, field_description="quantity")
+
+
+class StockStateChange(BaseModel):
+    """Body for changing a supply's stock state."""
+    stock_state: StockState
