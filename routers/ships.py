@@ -66,6 +66,23 @@ def get_tasks(ship: Ship = Depends(get_ship_or_404),
     return service.get_tasks(ship)
 
 
+@router.get("/{ship_id}/tasks/{task_id}", response_model=TaskRead)
+def get_task(task: Task = Depends(get_task_or_404)):
+    """
+    Get a single task belonging to the ship.
+
+    Task is only returned if it belongs to the ship with the given ID.
+    Otherwise, Error 404 is raised.
+
+    Args:
+        task: Task resolved from the path (404 if not found).
+
+    Returns:
+        The Task serialized as `TaskRead`.
+    """
+    return task
+
+
 @router.post("/{ship_id}/tasks", response_model=TaskRead,
              status_code=status.HTTP_201_CREATED)
 def add_task(task_data: TaskCreate,
