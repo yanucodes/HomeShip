@@ -26,6 +26,22 @@ def get_ship(ship: Ship = Depends(get_ship_or_404)):
     return ship
 
 
+@router.get("/{ship_id}/members", response_model=list[ShipMemberRead])
+def get_members(ship: Ship = Depends(get_ship_or_404),
+                service: ShipService = Depends(get_ship_service)):
+    """
+    List all crew members of the ship.
+
+    Args:
+        ship: Ship resolved from the path's `ship_id` (404 if not found).
+        service: Ship service, injected by FastAPI via `get_ship_service`.
+
+    Returns:
+        The ship's crew, each serialized as `ShipMemberRead`.
+    """
+    return service.get_members(ship)
+
+
 @router.post("/{ship_id}/members", response_model=ShipMemberRead,
              status_code=status.HTTP_201_CREATED)
 def add_member(member_data: ShipMemberAdd,

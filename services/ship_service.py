@@ -250,6 +250,18 @@ class ShipService:
         """
         self.supply_repository.delete(supply)
 
+    def get_members(self, ship: Ship) -> list[ShipMember]:
+        """
+        Get all crew members of the ship.
+
+        Args:
+            ship: Ship whose members to get.
+
+        Returns:
+            List of ShipMember objects.
+        """
+        return ship.ship_memberships
+
     def add_member_to_ship(self, ship: Ship,
                            member_data: ShipMemberAdd) -> ShipMember | None:
         """
