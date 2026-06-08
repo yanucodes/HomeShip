@@ -1,7 +1,7 @@
 """Repository for Task."""
 from models import Task
 
-from .base import BaseRepository
+from .base_repository import BaseRepository
 
 
 class TaskRepository(BaseRepository[Task]):

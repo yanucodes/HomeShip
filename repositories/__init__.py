@@ -1,9 +1,9 @@
 """Repositories for HomeShip entities."""
-from .ship import ShipRepository
-from .ship_member import ShipMemberRepository
-from .supply import SupplyRepository
-from .task import TaskRepository
-from .user import UserRepository
+from .ship_repository import ShipRepository
+from .ship_member_repository import ShipMemberRepository
+from .supply_repository import SupplyRepository
+from .task_repository import TaskRepository
+from .user_repository import UserRepository
 
 __all__ = ["ShipRepository", "ShipMemberRepository", "SupplyRepository",
            "TaskRepository", "UserRepository"]

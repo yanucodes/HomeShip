@@ -1,7 +1,7 @@
 """Repository for ShipMember."""
 from models import ShipMember
 
-from .base import BaseRepository
+from .base_repository import BaseRepository
 
 
 class ShipMemberRepository(BaseRepository[ShipMember]):

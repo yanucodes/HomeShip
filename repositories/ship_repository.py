@@ -1,7 +1,7 @@
 """Repository for Ship."""
 from models import Ship
 
-from .base import BaseRepository
+from .base_repository import BaseRepository
 
 
 class ShipRepository(BaseRepository[Ship]):
