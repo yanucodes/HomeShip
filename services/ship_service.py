@@ -149,6 +149,22 @@ class ShipService:
         return self.task_repository.update(
             task, task.get_changes_on_frequency_changing(new_frequency))
 
+    def deactivate_task(self, task: Task) -> Task:
+        """
+        Deactivate task.
+
+        Deactivating a task sets `frequency`, `date_due` and `date_last` to
+        None and drops its `alert_state` to INACTIVE.
+
+        Args:
+            task: Task to deactivate.
+
+        Returns:
+            The updated task.
+        """
+        return self.task_repository.update(task,
+                                           task.get_changes_on_deactivation())
+
     def delete_task(self, task: Task) -> None:
         """
         Delete task from the ship.

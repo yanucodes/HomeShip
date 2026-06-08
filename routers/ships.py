@@ -178,6 +178,26 @@ def change_task_frequency(frequency_data: FrequencyChange,
     return service.change_task_frequency(task, frequency_data.frequency)
 
 
+@router.post("/{ship_id}/tasks/{task_id}/deactivate",
+             response_model=TaskRead)
+def deactivate_task(task: Task = Depends(get_task_or_404),
+                    service: ShipService = Depends(get_ship_service)):
+    """
+    Deactivate a task.
+
+    Task is only deactivated if it belongs to the ship with the given ID.
+    Otherwise, Error 404 is raised.
+
+    Args:
+        task: Task to update, resolved from the path (404 if not found).
+        service: Ship service, injected by FastAPI via `get_ship_service`.
+
+    Returns:
+        The updated Task serialized as `TaskRead`.
+    """
+    return service.deactivate_task(task)
+
+
 @router.delete("/{ship_id}/tasks/{task_id}",
                status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(task: Task = Depends(get_task_or_404),
