@@ -24,6 +24,17 @@ class UserRead(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class UserPublic(BaseModel):
+    """Public-facing user identity, safe to expose to other crew members.
+
+    Carries only the fields needed to display a person (no email or other
+    private profile data).
+    """
+    user_id: UUID
+    display_name: DisplayName
+    model_config = ConfigDict(from_attributes=True)
+
+
 class UserUpdate(UserBase):
     username: str | None = None
     display_name: DisplayName | None = None
