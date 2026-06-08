@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr
 
+from schemas.user_schema import UserPublic
+
 
 class ShipMemberBase(BaseModel):
     role: str
@@ -19,8 +21,8 @@ class ShipMemberAdd(ShipMemberCreate):
 
 
 class ShipMemberRead(ShipMemberBase):
-    user_id: UUID
     ship_id: UUID
+    user: UserPublic
     model_config = ConfigDict(from_attributes=True)
 
 
