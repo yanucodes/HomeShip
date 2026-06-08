@@ -20,6 +20,11 @@ class ShipRead(ShipBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class ShipUpdate(ShipBase):
+class ShipUpdate(BaseModel):
+    """
+    Editable plain attributes of a ship.
+
+    Covers the free-form fields a user edits directly (currently `shipname`).
+    The `start_date` is set on creation of the ship and is not editable.
+    """
     shipname: str | None = None
-    start_date: date | None = None

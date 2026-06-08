@@ -2,7 +2,8 @@
 import uuid
 from models import Ship, ShipMember, User
 from repositories import ShipMemberRepository, ShipRepository, UserRepository
-from schemas import ShipCreate, ShipMemberCreate, UserCreate, UserUpdate
+from schemas import (ShipCreate, ShipMemberCreate, ShipUpdate, UserCreate,
+                     UserUpdate)
 from security import hash_password
 
 
@@ -112,6 +113,20 @@ class UserService:
             List of Ship objects.
         """
         return [membership.ship for membership in user.ship_memberships]
+
+    def update_ship(self, ship: Ship, ship_data: ShipUpdate) -> Ship:
+        """
+        Update ship's name.
+
+        Args:
+            ship: Ship to update
+            ship_data: Validated fields from the request.
+
+        Returns:
+            Updated Ship object.
+        """
+        changes = ship_data.model_dump(exclude_unset=True)
+        return self.ship_repository.update(ship, changes)
 
     def get_ship_membership(self, user: User, ship: Ship) -> ShipMember | None:
         """Find the user's membership on the given ship, or None.

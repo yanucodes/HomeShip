@@ -2,10 +2,10 @@
 from fastapi import APIRouter, Depends, status
 
 from dependencies import (get_user_or_404, get_user_service,
-                          get_ship_membership_or_404)
-from models import User, ShipMember
-from schemas import (ShipCreate, ShipMemberCreate, ShipRead, UserCreate,
-                     UserRead, UserUpdate)
+                          get_ship_membership_or_404, get_ship_or_404)
+from models import User, Ship, ShipMember
+from schemas import (ShipCreate, ShipMemberCreate, ShipRead, ShipUpdate,
+                     UserCreate, UserRead, UserUpdate)
 from services import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -110,6 +110,25 @@ def get_ships(user: User = Depends(get_user_or_404),
         the user isn't a member of any ship.
     """
     return service.get_ships(user)
+
+
+@router.patch("/{user_id}/ships/{ship_id}",
+              response_model=ShipRead)
+def update_ship(ship_data: ShipUpdate,
+                ship: Ship = Depends(get_ship_or_404),
+                service: UserService = Depends(get_user_service)):
+    """
+    Update user's ship.
+
+    Args:
+        ship_data: Validated ship fields from the request body.
+        ship: Ship to update.
+        service: User service, injected by FastAPI via `get_user_service`.
+
+    Returns:
+        Updated Ship serialized as `ShipRead`.
+    """
+    return service.update_ship(ship, ship_data)
 
 
 @router.delete("/{user_id}/ships/{ship_id}",
