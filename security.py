@@ -1,6 +1,10 @@
 """Authentication and password helpers."""
+from datetime import datetime, timedelta, timezone
 
+import jwt
 from passlib.context import CryptContext
+
+from config import settings
 
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -28,3 +32,22 @@ def verify_password(password: str, password_hash: str) -> bool:
         True if the password matches the hash, False otherwise.
     """
     return _pwd_context.verify(password, password_hash)
+
+
+def create_access_token(subject: str) -> str:
+    """
+    Build a signed JWT access token for a subject.
+
+    Args:
+        subject: Identifies who the token is for — the user's `user_id`
+            as a string (the JWT `sub` claim must be a string).
+
+    Returns:
+        A signed, URL-safe JWT string carrying `sub`, `type="access"`,
+        and a UTC `exp` expiry claim.
+    """
+    expire_time = (datetime.now(timezone.utc) +
+                   timedelta(minutes=settings.access_token_expire_minutes))
+    jwt_data = {"sub": subject, "type": "access", "exp": expire_time}
+    return jwt.encode(jwt_data, settings.jwt_secret_key,
+                      algorithm=settings.jwt_algorithm)
