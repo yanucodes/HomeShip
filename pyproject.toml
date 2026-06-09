@@ -27,6 +27,7 @@ only-include = [
     "database.py",
     "dependencies.py",
     "security.py",
+    "config.py",
     "models",
     "repositories",
     "routers",

@@ -7,7 +7,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from database import get_session, settings
+from config import settings
+from database import get_session
 from main import app
 from models import Base
 
