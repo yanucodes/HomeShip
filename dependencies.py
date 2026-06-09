@@ -7,6 +7,8 @@ never touch the ORM or construct repositories themselves.
 import uuid
 
 from fastapi import Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+import jwt
 from sqlalchemy.orm import Session
 
 from database import get_session
@@ -18,7 +20,11 @@ from repositories import (
     TaskRepository,
     UserRepository,
 )
+from security import decode_access_token
 from services import ShipService, UserService
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 def get_user_service(session: Session = Depends(get_session)) -> UserService:
@@ -35,6 +41,37 @@ def get_user_service(session: Session = Depends(get_session)) -> UserService:
         ship_member_repository=ShipMemberRepository(session),
         user_repository=UserRepository(session),
     )
+
+
+def get_current_user(token: str = Depends(oauth2_scheme),
+                     service: UserService = Depends(get_user_service)) -> User:
+    """Resolve the request's bearer token to the authenticated User.
+
+    Args:
+        token: The JWT access token from the `Authorization: Bearer` header,
+            extracted by `oauth2_scheme`.
+        service: UserService, injected via `get_user_service`.
+
+    Returns:
+        The User identified by the token's `sub` claim.
+
+    Raises:
+        HTTPException: 401 if the token is missing, invalid, expired, not an
+            access token, or its user no longer exists.
+    """
+    credentials_error = HTTPException(
+        status_code=401,
+        detail="Could not validate  credentials",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
+    try:
+        user_id = decode_access_token(token)
+    except jwt.PyJWTError:
+        raise credentials_error
+    user = service.get_user_by_id(user_id)
+    if user is None:
+        raise credentials_error
+    return user
 
 
 def get_ship_service(session: Session = Depends(get_session)) -> ShipService:
