@@ -4,7 +4,7 @@ from models import Ship, ShipMember, User
 from repositories import ShipMemberRepository, ShipRepository, UserRepository
 from schemas import (ShipCreate, ShipMemberCreate, ShipUpdate, UserCreate,
                      UserUpdate)
-from security import hash_password
+from security import hash_password, verify_password
 
 
 class UserService:
@@ -33,6 +33,22 @@ class UserService:
         new_user = User(**data, password_hash=hash_password(
             user_data.password))
         return self.user_repository.add(new_user)
+
+    def authenticate_user(self, email: str, password: str) -> User | None:
+        """
+        Authenticate user via email and password.
+
+        Args:
+            email: User's email.
+            password: User's password.
+
+        Returns:
+            User if user exists and password is correct. None otherwise.
+        """
+        user = self.user_repository.get_by_email(email)
+        if user and verify_password(password, user.password_hash):
+            return user
+        return None
 
     def get_user_by_id(self, user_id: uuid.UUID) -> User | None:
         """
