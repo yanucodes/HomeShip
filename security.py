@@ -1,5 +1,6 @@
 """Authentication and password helpers."""
 from datetime import datetime, timedelta, timezone
+import uuid
 
 import jwt
 from passlib.context import CryptContext
@@ -51,3 +52,26 @@ def create_access_token(subject: str) -> str:
     jwt_data = {"sub": subject, "type": "access", "exp": expire_time}
     return jwt.encode(jwt_data, settings.jwt_secret_key,
                       algorithm=settings.jwt_algorithm)
+
+
+def decode_access_token(token: str) -> uuid.UUID:
+    """Verify a JWT access token and return the user ID it identifies.
+
+    Args:
+        token: The encoded JWT taken from the request's `Authorization` header.
+
+    Returns:
+        The `user_id` carried in the token's `sub` claim.
+
+    Raises:
+        jwt.PyJWTError: If the signature is invalid, the token has expired,
+            or it is not an access token.
+    """
+    jwt_data = jwt.decode(
+        token,
+        settings.jwt_secret_key,
+        algorithms=[settings.jwt_algorithm],
+    )
+    if jwt_data.get("type") != "access":
+        raise jwt.InvalidTokenError("Not an access token")
+    return uuid.UUID(jwt_data["sub"])
