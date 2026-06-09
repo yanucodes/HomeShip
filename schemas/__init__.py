@@ -1,5 +1,6 @@
 """Pydantic schemas for HomeShip"""
 
+from .auth_schema import Token
 from .ship_schema import ShipCreate, ShipRead, ShipUpdate
 from .ship_member_schema import (
     ShipMemberAdd,
@@ -18,5 +19,5 @@ __all__ = ["ShipCreate", "ShipRead", "ShipUpdate", "ShipMemberAdd",
            "SupplyCreate", "SupplyRead", "SupplyUpdate", "StockStateChange",
            "SupplyReschedule",
            "FrequencyChange", "TaskCreate", "TaskRead", "TaskPostpone",
-           "TaskUpdate", "UserCreate", "UserPublic", "UserRead",
+           "TaskUpdate", "Token", "UserCreate", "UserPublic", "UserRead",
            "UserUpdate", ]
