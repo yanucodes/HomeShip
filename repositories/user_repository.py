@@ -22,3 +22,17 @@ class UserRepository(BaseRepository[User]):
         return self.session.execute(
             select(User).filter_by(email=user_email)
         ).scalar_one_or_none()
+
+
+    def get_by_username(self, username: str) -> User | None:
+        """Fetch user by username.
+
+        Args:
+            username: username to search for.
+
+        Returns:
+            User object or None, if user not found.
+        """
+        return self.session.execute(
+            select(User).filter_by(username=username)
+        ).scalar_one_or_none()

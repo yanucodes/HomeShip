@@ -34,18 +34,21 @@ class UserService:
             user_data.password))
         return self.user_repository.add(new_user)
 
-    def authenticate_user(self, email: str, password: str) -> User | None:
+    def authenticate_user(self, identifier: str, password: str) -> User | None:
         """
-        Authenticate user via email and password.
+        Authenticate user via email or username and password.
 
         Args:
-            email: User's email.
+            identifier: User's email or username.
             password: User's password.
 
         Returns:
             User if user exists and password is correct. None otherwise.
         """
-        user = self.user_repository.get_by_email(email)
+        if '@' in identifier:
+            user = self.user_repository.get_by_email(identifier)
+        else:
+            user = self.user_repository.get_by_username(identifier)
         if user and verify_password(password, user.password_hash):
             return user
         return None
