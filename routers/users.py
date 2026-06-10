@@ -1,9 +1,9 @@
 """User endpoints."""
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
-from dependencies import (get_current_user, get_current_users_ship_or_404,
-                          get_ship_or_404, get_user_service)
-from models import Ship, User
+from dependencies import (get_current_user, get_current_ship_membership_or_404,
+                          get_current_users_ship_or_404, get_user_service)
+from models import Ship, ShipMember, User
 from schemas import (ShipCreate, ShipMemberCreate, ShipRead, ShipUpdate,
                      UserCreate, UserRead, UserUpdate)
 from services import UserService
@@ -28,7 +28,7 @@ def create_user(user_data: UserCreate,
 
 
 @router.get("/me", response_model=UserRead)
-def get_current_user(user: User = Depends(get_current_user)):
+def get_me(user: User = Depends(get_current_user)):
     """
     Fetch user data.
 
@@ -133,9 +133,9 @@ def update_ship(ship_data: ShipUpdate,
 
 @router.delete("/me/ships/{ship_id}",
                  status_code=status.HTTP_204_NO_CONTENT)
-def leave_ship(user: User = Depends(get_current_user),
-               ship: Ship = Depends(get_ship_or_404),
-               service: UserService = Depends(get_user_service)):
+def leave_ship(
+        membership: ShipMember = Depends(get_current_ship_membership_or_404),
+        service: UserService = Depends(get_user_service)):
     """
     Remove the user's membership of the ship (they leave the crew).
 
@@ -143,15 +143,9 @@ def leave_ship(user: User = Depends(get_current_user),
     (taking its tasks and supplies with it via cascade).
 
     Args:
-        user: User resolved via `get_current_user`.
-        ship: Ship resolved from the path's `ship_id`.
+        membership: The current user's membership on the path's ship,
+            resolved via `get_current_ship_membership_or_404` (404 if the
+            user is not a member).
         service: User service, injected by FastAPI via `get_user_service`.
-
-    Raises:
-        HTTPException: 404 if the user is not a member of the ship.
     """
-    membership = service.get_ship_membership(user, ship)
-    if membership is None:
-        raise HTTPException(status_code=404,
-                            detail="You are not a member of this ship.")
     service.delete_ship_membership(membership)
