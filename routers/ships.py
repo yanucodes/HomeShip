@@ -1,7 +1,7 @@
 """Ship endpoints."""
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from dependencies import (get_ship_membership_or_404, get_ship_or_404,
+from dependencies import (get_ship_membership_or_404, get_current_users_ship_or_404,
                           get_ship_service, get_supply_or_404, get_task_or_404)
 from models import Ship, ShipMember, Supply, Task
 from schemas import (FrequencyChange, ShipRead, ShipMemberAdd, ShipMemberRead,
@@ -14,12 +14,13 @@ router = APIRouter(prefix="/ships", tags=["ships"])
 
 
 @router.get("/{ship_id}", response_model=ShipRead)
-def get_ship(ship: Ship = Depends(get_ship_or_404)):
+def get_ship(ship: Ship = Depends(get_current_users_ship_or_404)):
     """
     Fetch ship data.
 
     Args:
-        ship: Ship resolved from the path's `ship_id` (404 if not found).
+        ship: Ship resolved from the path's `ship_id` (404 if not found or
+            current user is not a member).
 
     Returns:
         The ship serialized as `ShipRead`.
@@ -28,13 +29,14 @@ def get_ship(ship: Ship = Depends(get_ship_or_404)):
 
 
 @router.get("/{ship_id}/members", response_model=list[ShipMemberRead])
-def get_members(ship: Ship = Depends(get_ship_or_404),
+def get_members(ship: Ship = Depends(get_current_users_ship_or_404),
                 service: ShipService = Depends(get_ship_service)):
     """
     List all crew members of the ship.
 
     Args:
-        ship: Ship resolved from the path's `ship_id` (404 if not found).
+        ship: Ship resolved from the path's `ship_id` (404 if not found or
+            current user is not a member).
         service: Ship service, injected by FastAPI via `get_ship_service`.
 
     Returns:
@@ -46,7 +48,7 @@ def get_members(ship: Ship = Depends(get_ship_or_404),
 @router.post("/{ship_id}/members", response_model=ShipMemberRead,
              status_code=status.HTTP_201_CREATED)
 def add_member(member_data: ShipMemberAdd,
-               ship: Ship = Depends(get_ship_or_404),
+               ship: Ship = Depends(get_current_users_ship_or_404),
                service: ShipService = Depends(get_ship_service)):
     """
     Add an existing user to the ship's crew, identified by email.
@@ -54,7 +56,8 @@ def add_member(member_data: ShipMemberAdd,
     Args:
         member_data: Validated member fields from the request body (the
             email of the user to add plus their role).
-        ship: Ship resolved from the path's `ship_id` (404 if not found).
+        ship: Ship resolved from the path's `ship_id` (404 if not found or
+            current user is not a member).
         service: Ship service, injected by FastAPI via `get_ship_service`.
 
     Returns:
@@ -89,13 +92,14 @@ def update_member(member_data: ShipMemberUpdate,
 
 
 @router.get("/{ship_id}/tasks", response_model=list[TaskRead])
-def get_tasks(ship: Ship = Depends(get_ship_or_404),
+def get_tasks(ship: Ship = Depends(get_current_users_ship_or_404),
               service: ShipService = Depends(get_ship_service)):
     """
     List all tasks belonging to the ship.
 
     Args:
-        ship: Ship resolved from the path's `ship_id` (404 if not found).
+        ship: Ship resolved from the path's `ship_id` (404 if not found or
+            current user is not a member).
         service: Ship service, injected by FastAPI via `get_ship_service`.
 
     Returns:
@@ -125,14 +129,15 @@ def get_task(task: Task = Depends(get_task_or_404)):
 @router.post("/{ship_id}/tasks", response_model=TaskRead,
              status_code=status.HTTP_201_CREATED)
 def add_task(task_data: TaskCreate,
-             ship: Ship = Depends(get_ship_or_404),
+             ship: Ship = Depends(get_current_users_ship_or_404),
              service: ShipService = Depends(get_ship_service)):
     """
     Add a new task to the ship.
 
     Args:
         task_data: Validated Task fields from the request body.
-        ship: Ship resolved from the path's `ship_id` (404 if not found).
+        ship: Ship resolved from the path's `ship_id` (404 if not found or
+            current user is not a member).
         service: Ship service, injected by FastAPI via `get_ship_service`.
 
     Returns:
@@ -272,13 +277,14 @@ def delete_task(task: Task = Depends(get_task_or_404),
 
 
 @router.get("/{ship_id}/supplies", response_model=list[SupplyRead])
-def get_supplies(ship: Ship = Depends(get_ship_or_404),
+def get_supplies(ship: Ship = Depends(get_current_users_ship_or_404),
                  service: ShipService = Depends(get_ship_service)):
     """
     List all supplies belonging to the ship.
 
     Args:
-        ship: Ship resolved from the path's `ship_id` (404 if not found).
+        ship: Ship resolved from the path's `ship_id` (404 if not found or
+            current user is not a member).
         service: Ship service, injected by FastAPI via `get_ship_service`.
 
     Returns:
@@ -308,14 +314,15 @@ def get_supply(supply: Supply = Depends(get_supply_or_404)):
 @router.post("/{ship_id}/supplies", response_model=SupplyRead,
              status_code=status.HTTP_201_CREATED)
 def add_supply(supply_data: SupplyCreate,
-               ship: Ship = Depends(get_ship_or_404),
+               ship: Ship = Depends(get_current_users_ship_or_404),
                service: ShipService = Depends(get_ship_service)):
     """
     Add a new supply to the ship.
 
     Args:
         supply_data: Validated Supply fields from the request body.
-        ship: Ship resolved from the path's `ship_id` (404 if not found).
+        ship: Ship resolved from the path's `ship_id` (404 if not found or
+            current user is not a member).
         service: Ship service, injected by FastAPI via `get_ship_service`.
 
     Returns:
