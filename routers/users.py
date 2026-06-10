@@ -1,9 +1,9 @@
 """User endpoints."""
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from dependencies import (get_user_or_404, get_user_service,
-                          get_ship_membership_or_404, get_ship_or_404)
-from models import User, Ship, ShipMember
+from dependencies import (get_current_user, get_current_users_ship_or_404,
+                          get_ship_or_404, get_user_service)
+from models import Ship, User
 from schemas import (ShipCreate, ShipMemberCreate, ShipRead, ShipUpdate,
                      UserCreate, UserRead, UserUpdate)
 from services import UserService
@@ -27,13 +27,13 @@ def create_user(user_data: UserCreate,
     return service.create_user(user_data)
 
 
-@router.get("/{user_id}", response_model=UserRead)
-def get_user(user: User = Depends(get_user_or_404)):
+@router.get("/me", response_model=UserRead)
+def get_current_user(user: User = Depends(get_current_user)):
     """
     Fetch user data.
 
     Args:
-        user: User resolved from the path's `user_id` (404 if not found).
+        user: User resolved via `get_current_user`.
 
     Returns:
         The user serialized as `UserRead`.
@@ -41,16 +41,16 @@ def get_user(user: User = Depends(get_user_or_404)):
     return user
 
 
-@router.patch("/{user_id}", response_model=UserRead)
+@router.patch("/me", response_model=UserRead)
 def update_user(user_data: UserUpdate,
-                user: User = Depends(get_user_or_404),
+                user: User = Depends(get_current_user),
                 service: UserService = Depends(get_user_service)):
     """
     Update user data.
 
     Args:
         user_data: Validated partial user fields from the request body.
-        user: User resolved from the path's `user_id` (404 if not found).
+        user: User resolved via `get_current_user`.
         service: User service, injected by FastAPI via `get_user_service`.
 
     Returns:
@@ -59,24 +59,24 @@ def update_user(user_data: UserUpdate,
     return service.update_user(user, user_data)
 
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(user: User = Depends(get_user_or_404),
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(user: User = Depends(get_current_user),
                 service: UserService = Depends(get_user_service)):
     """
-    Delete user with a given ID.
+    Delete current user.
 
     Args:
-        user: User resolved from the path's `user_id` (404 if not found).
+        user: User resolved via `get_current_user`.
         service: User service, injected by FastAPI via `get_user_service`.
     """
     service.delete_user(user)
 
 
-@router.post("/{user_id}/ships", response_model=ShipRead,
+@router.post("/me/ships", response_model=ShipRead,
              status_code=status.HTTP_201_CREATED)
 def create_ship_for_user(ship_data: ShipCreate,
                          ship_member_data: ShipMemberCreate,
-                         user: User = Depends(get_user_or_404),
+                         user: User = Depends(get_current_user),
                          service: UserService = Depends(get_user_service)):
     """
     Create a new ship for the user, with the user as its first crew member.
@@ -85,8 +85,8 @@ def create_ship_for_user(ship_data: ShipCreate,
         ship_data: Validated ship fields from the request body.
         ship_member_data: Validated crew-membership fields (e.g. role) from
             the request body.
-        user: User resolved from the path's `user_id` (404 if not found);
-            becomes the ship's first member.
+        user: User resolved via `get_current_user`; becomes the ship's first
+            member.
         service: User service, injected by FastAPI via `get_user_service`.
 
     Returns:
@@ -95,14 +95,14 @@ def create_ship_for_user(ship_data: ShipCreate,
     return service.create_ship_for_user(user, ship_data, ship_member_data)
 
 
-@router.get("/{user_id}/ships", response_model=list[ShipRead])
-def get_ships(user: User = Depends(get_user_or_404),
+@router.get("/me/ships", response_model=list[ShipRead])
+def get_ships(user: User = Depends(get_current_user),
               service: UserService = Depends(get_user_service)):
     """
     List all ships the user is a crew member of.
 
     Args:
-        user: User resolved from the path's `user_id` (404 if not found).
+        user: User resolved via `get_current_user`.
         service: User service, injected by FastAPI via `get_user_service`.
 
     Returns:
@@ -112,10 +112,10 @@ def get_ships(user: User = Depends(get_user_or_404),
     return service.get_ships(user)
 
 
-@router.patch("/{user_id}/ships/{ship_id}",
+@router.patch("/me/ships/{ship_id}",
               response_model=ShipRead)
 def update_ship(ship_data: ShipUpdate,
-                ship: Ship = Depends(get_ship_or_404),
+                ship: Ship = Depends(get_current_users_ship_or_404),
                 service: UserService = Depends(get_user_service)):
     """
     Update user's ship.
@@ -131,9 +131,10 @@ def update_ship(ship_data: ShipUpdate,
     return service.update_ship(ship, ship_data)
 
 
-@router.delete("/{user_id}/ships/{ship_id}",
+@router.delete("/me/ships/{ship_id}",
                  status_code=status.HTTP_204_NO_CONTENT)
-def leave_ship(membership: ShipMember = Depends(get_ship_membership_or_404),
+def leave_ship(user: User = Depends(get_current_user),
+               ship: Ship = Depends(get_ship_or_404),
                service: UserService = Depends(get_user_service)):
     """
     Remove the user's membership of the ship (they leave the crew).
@@ -142,8 +143,15 @@ def leave_ship(membership: ShipMember = Depends(get_ship_membership_or_404),
     (taking its tasks and supplies with it via cascade).
 
     Args:
-        membership: Ship membership resolved from the path's `user_id`
-            and `ship_id`.
+        user: User resolved via `get_current_user`.
+        ship: Ship resolved from the path's `ship_id`.
         service: User service, injected by FastAPI via `get_user_service`.
+
+    Raises:
+        HTTPException: 404 if the user is not a member of the ship.
     """
+    membership = service.get_ship_membership(user, ship)
+    if membership is None:
+        raise HTTPException(status_code=404,
+                            detail="You are not a member of this ship.")
     service.delete_ship_membership(membership)
