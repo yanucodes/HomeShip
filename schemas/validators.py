@@ -66,6 +66,30 @@ def positive_timedelta(
     return value
 
 
+def no_at_sign(
+    value: str | None, *, field_description: str = "value"
+) -> str | None:
+    """Reject a string (if provided) containing an '@' character.
+
+    Used to keep usernames distinct from emails, so login can tell which
+    kind of identifier it was given by whether it contains '@'.
+
+    Args:
+        value: The string to check, or None. Accepts None for optional
+            fields.
+        field_description: Name of the field, used to make the error message.
+
+    Returns:
+        The unchanged value if valid. None if the string was not provided.
+
+    Raises:
+        ValueError: If the string contains '@'.
+    """
+    if value is not None and "@" in value:
+        raise ValueError(f"{field_description} must not contain '@'")
+    return value
+
+
 def non_negative(
     value: int | None, *, field_description: str = "value"
 ) -> int | None:
