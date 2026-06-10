@@ -157,6 +157,32 @@ def get_ship_membership_or_404(
     return membership
 
 
+def get_current_users_ship_or_404(
+        user: User = Depends(get_current_user),
+        ship: Ship = Depends(get_ship_or_404),
+        service: UserService = Depends(get_user_service),
+) -> Ship:
+    """Resolve the path's ship and confirm the authenticated user is a member
+    of it.
+
+    Args:
+        user: The authenticated user, via `get_current_user`.
+        ship: Ship resolved from the path, injected via `get_ship_or_404`.
+        service: UserService, injected via `get_user_service`.
+
+    Returns:
+        Ship if it exists and user is a member.
+
+    Raises:
+        HTTPException: 404 if the current `user` is not a member of `ship`.
+    """
+    membership = service.get_ship_membership(user, ship)
+    if membership is None:
+        raise HTTPException(status_code=404,
+                            detail="You are not a member of this ship.")
+    return ship
+
+
 def get_task_or_404(task_id: uuid.UUID,
                     ship: Ship = Depends(get_ship_or_404),
                     service: ShipService = Depends(get_ship_service)) -> Task:
