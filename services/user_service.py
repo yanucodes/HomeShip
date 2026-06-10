@@ -4,7 +4,7 @@ from models import Ship, ShipMember, User
 from repositories import ShipMemberRepository, ShipRepository, UserRepository
 from schemas import (ShipCreate, ShipMemberCreate, ShipUpdate, UserCreate,
                      UserUpdate)
-from security import hash_password, verify_password
+from security import hash_password, verify_dummy, verify_password
 
 
 class UserService:
@@ -49,7 +49,10 @@ class UserService:
             user = self.user_repository.get_by_email(identifier)
         else:
             user = self.user_repository.get_by_username(identifier)
-        if user and verify_password(password, user.password_hash):
+        if user is None:
+            verify_dummy()
+            return None
+        if verify_password(password, user.password_hash):
             return user
         return None
 

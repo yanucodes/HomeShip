@@ -35,6 +35,17 @@ def verify_password(password: str, password_hash: str) -> bool:
     return _pwd_context.verify(password, password_hash)
 
 
+def verify_dummy() -> None:
+    """Run a throwaway verification against a dummy hash to equalize timing.
+
+    Call this when no user matched the login identifier, so an unknown
+    account takes the same time as a real account with a wrong password.
+    Without it, the faster "no such user" path lets an attacker enumerate
+    which emails or usernames exist by measuring response time.
+    """
+    _pwd_context.dummy_verify()
+
+
 def create_access_token(subject: str) -> str:
     """
     Build a signed JWT access token for a subject.
