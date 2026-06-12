@@ -1,7 +1,8 @@
 """Ship endpoints."""
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from dependencies import (get_ship_membership_or_404, get_current_users_ship_or_404,
+from dependencies import (get_current_ship_membership_or_404,
+                          get_current_users_ship_or_404,
                           get_ship_service, get_supply_or_404, get_task_or_404)
 from models import Ship, ShipMember, Supply, Task
 from schemas import (FrequencyChange, ShipRead, ShipMemberAdd, ShipMemberRead,
@@ -69,20 +70,21 @@ def add_member(member_data: ShipMemberAdd,
     return member
 
 
-@router.patch("/{ship_id}/members/{user_id}", response_model=ShipMemberRead)
-def update_member(member_data: ShipMemberUpdate,
-                  membership: ShipMember = Depends(get_ship_membership_or_404),
-                  service: ShipService = Depends(get_ship_service)):
+@router.patch("/{ship_id}/members/me", response_model=ShipMemberRead)
+def update_me(
+        member_data: ShipMemberUpdate,
+        membership: ShipMember = Depends(get_current_ship_membership_or_404),
+        service: ShipService = Depends(get_ship_service)):
     """
-    Change a crew member's role on the ship.
+    Change the current user's role on the ship.
 
-    Membership is resolved from the path's `ship_id` and `user_id`; a 404 is
-    raised if that user is not a member of the ship.
+    Membership is resolved from the path's `ship_id` for the authenticated
+    user; a 404 is raised if they are not a member of the ship.
 
     Args:
         member_data: Validated member fields from the request body.
-        membership: Ship membership resolved from the path (404 if the user
-            is not a member of the ship).
+        membership: The current user's membership on the ship, resolved via
+            `get_current_ship_membership_or_404` (404 if not a member).
         service: Ship service, injected by FastAPI via `get_ship_service`.
 
     Returns:
