@@ -12,6 +12,7 @@ from sqlalchemy import Date, Float, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from models.alert_state import AlertState
 from models.base import Base
 
 if TYPE_CHECKING:
@@ -58,3 +59,40 @@ class Ship(Base):
     supplies: Mapped[list["Supply"]] = relationship(
         back_populates="ship", cascade="all, delete-orphan"
     )
+
+    @property
+    def current_alerts(self) -> dict[AlertState, int]:
+        """Count the ship's tasks and supplies at each alert level.
+
+        Returns:
+            A mapping of every `AlertState` to the number of tasks and
+            supplies currently in that state. Levels with no items map to 0.
+        """
+        counts = {state: 0 for state in AlertState}
+        for item in (*self.tasks, *self.supplies):
+            counts[item.alert_state] += 1
+        return counts
+
+    @property
+    def current_speed(self) -> float | None:
+        """Current travel speed in light years per day, from the alert mix.
+
+        The ship cruises at the fraction of its tracked items that are on
+        track — `green / (green + yellow)`. A single red alert halts progress,
+        and an auto-destruct wipes it out entirely.
+
+        Returns:
+            `None` if any item is at AUTO_DESTRUCT (progress destroyed), `0.0`
+            if any item is at RED (progress frozen), otherwise the green
+            fraction of active (green + yellow) items, or `1.0` when there are
+            no active items to weigh the ship down.
+        """
+        alerts = self.current_alerts
+        if alerts[AlertState.AUTO_DESTRUCT]:
+            return None
+        if alerts[AlertState.RED]:
+            return 0.0
+        active = alerts[AlertState.GREEN] + alerts[AlertState.YELLOW]
+        if not active:
+            return 1.0
+        return alerts[AlertState.GREEN] / active
