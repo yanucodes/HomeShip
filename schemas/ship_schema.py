@@ -17,6 +17,7 @@ class ShipCreate(ShipBase):
 
 class ShipRead(ShipBase):
     ship_id: UUID
+    distance: float
     model_config = ConfigDict(from_attributes=True)
 
 
