@@ -83,19 +83,23 @@ class Supply(Alertable, Base):
     def derive_alert(stock_state: StockState, date_due: date | None = None,
                      today: date | None = None) -> AlertState:
         """
-        Derive alert state based on `stock_state` and `date_due`.
+        Derive alert state from `date_due` proximity, or `stock_state` when
+        there is no deadline.
 
-        Alert is `green` if the item is in stock, `yellow` if the item is
-        running low, or out of stock with a `date_due` more than a day away.
-        It is `red` if the item is out of stock and no `date_due` or the
-        deadline is close — `date_due` is today or tomorrow — so the crew is
-        warned before it's too late to act. It is `auto-destruct` if the item
-        is out of stock and `date_due` has already passed.
+        The presence of a `date_due` selects the mode:
+
+        * No deadline: the alert reflects the stock level alone — `green` if
+          in stock, `yellow` if running low, `red` if out of stock.
+        * Deadline set: the alert reflects how close the deadline is,
+          regardless of stock level — `green` while it is two or more days
+          away, `yellow` the day before, `red` on the day itself, and
+          `auto-destruct` once it has passed.
 
         Args:
             stock_state: Whether the item is currently available in the
-                household in sufficient amount.
-            date_due: Deadline for buying the item.
+                household in sufficient amount. Used only when `date_due` is
+                None.
+            date_due: Deadline for buying the item, or None.
             today: Current date. Defaults to `date.today()`.
 
         Returns:
@@ -104,15 +108,20 @@ class Supply(Alertable, Base):
         if today is None:
             today = date.today()
 
-        if stock_state == StockState.IN_STOCK:
-            return AlertState.GREEN
-        if stock_state == StockState.RUNNING_LOW:
-            return AlertState.YELLOW
-        if date_due is not None and date_due < today:
-            return AlertState.AUTO_DESTRUCT
-        if date_due is None or date_due <= today + timedelta(days=1):
+        if date_due is None:
+            if stock_state == StockState.IN_STOCK:
+                return AlertState.GREEN
+            if stock_state == StockState.RUNNING_LOW:
+                return AlertState.YELLOW
             return AlertState.RED
-        return AlertState.YELLOW
+
+        if today > date_due:
+            return AlertState.AUTO_DESTRUCT
+        if today == date_due:
+            return AlertState.RED
+        if date_due == today + timedelta(days=1):
+            return AlertState.YELLOW
+        return AlertState.GREEN
 
     @classmethod
     def set_alert_on_creation(cls, *, ship_id: uuid.UUID, name: str,
