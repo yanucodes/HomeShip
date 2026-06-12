@@ -209,18 +209,20 @@ def get_current_ship_membership_or_404(
 
 
 def get_task_or_404(task_id: uuid.UUID,
-                    ship: Ship = Depends(get_ship_or_404),
+                    ship: Ship = Depends(get_current_users_ship_or_404),
                     service: ShipService = Depends(get_ship_service)) -> Task:
     """Resolve a path's `task_id` to a Task on the path's ship, or raise 404.
 
-    Depends on `get_ship_or_404`, so the ship is validated first: a missing
-    ship raises "Ship not found". The task must belong to that ship,
-    so a `task_id` from another ship resolves to a
-    "Task not found" rather than leaking across ships.
+    Depends on `get_current_users_ship_or_404`, so the ship is validated and
+    the current user's membership confirmed first: a missing ship or a
+    non-member raises 404 before the task is looked up. The task must belong
+    to that ship, so a `task_id` from another ship resolves to "Task not
+    found" rather than leaking across ships.
 
     Args:
         task_id: Task identifier taken from the request path.
-        ship: Ship resolved from the path, injected via `get_ship_or_404`.
+        ship: The current user's ship, injected via
+            `get_current_users_ship_or_404`.
         service: ShipService, injected via `get_ship_service`.
 
     Returns:
@@ -236,19 +238,21 @@ def get_task_or_404(task_id: uuid.UUID,
 
 
 def get_supply_or_404(supply_id: uuid.UUID,
-                      ship: Ship = Depends(get_ship_or_404),
+                      ship: Ship = Depends(get_current_users_ship_or_404),
                       service: ShipService = Depends(get_ship_service)) -> (
         Supply):
     """Resolve a path's `supply_id` to a Supply on the path's ship, or 404.
 
-    Depends on `get_ship_or_404`, so the ship is validated first: a missing
-    ship raises "Ship not found". The supply must belong to that ship,
-    so a `supply_id` from another ship resolves to a "Supply not found"
-    rather than leaking across ships.
+    Depends on `get_current_users_ship_or_404`, so the ship is validated and
+    the current user's membership confirmed first: a missing ship or a
+    non-member raises 404 before the supply is looked up. The supply must
+    belong to that ship, so a `supply_id` from another ship resolves to
+    "Supply not found" rather than leaking across ships.
 
     Args:
         supply_id: Supply identifier taken from the request path.
-        ship: Ship resolved from the path, injected via `get_ship_or_404`.
+        ship: The current user's ship, injected via
+            `get_current_users_ship_or_404`.
         service: ShipService, injected via `get_ship_service`.
 
     Returns:
