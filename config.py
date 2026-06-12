@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     jwt_secret_key: str
     jwt_algorithm: str
     access_token_expire_minutes: int = 60
+    default_postpone_days: int = 3
 
 
 settings = Settings()
