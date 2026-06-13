@@ -2,6 +2,7 @@
 supplies."""
 import uuid
 from datetime import date, timedelta
+from config import settings
 from models import Ship, ShipMember, Supply, Task
 from models.supply import StockState
 from repositories import (ShipMemberRepository, ShipRepository,
@@ -34,6 +35,33 @@ class ShipService:
             Ship object or None if ship is not found.
         """
         return self.ship_repository.get(ship_id)
+
+    def run_daily(self, ship: Ship, today: date | None = None) -> None:
+        """Advance the ship one day: update distance and alert statuses of
+        tasks and supplies.
+
+        Run by the daily cron. The ship's distance change is applied first,
+        while alert states still reflect the previous day — so an item that
+        turns critical only costs progress the *next* run, giving the crew a
+        one-day grace window. Tasks and supplies are then re-evaluated: overdue
+        tasks escalate and supply deadlines tick closer. Items whose
+        `get_daily_changes` returns an empty dict (not overdue, no deadline,
+        inactive, or unchanged) are left untouched.
+
+        Args:
+            ship: Ship to advance, with its tasks and supplies loaded.
+            today: Reference date; defaults to `date.today()`. Injectable to
+                keep the logic deterministic in tests.
+        """
+        today = today or date.today()
+        postpone_time = timedelta(days=settings.default_postpone_days)
+        self.ship_repository.update(ship, ship.get_daily_changes())
+        for task in ship.tasks:
+            if changes := task.get_daily_changes(postpone_time, today):
+                self.task_repository.update(task, changes)
+        for supply in ship.supplies:
+            if changes := supply.get_daily_changes(today):
+                self.supply_repository.update(supply, changes)
 
     def create_task(self, ship: Ship, task_data: TaskCreate) -> Task:
         """Create a task belonging to the given ship.
