@@ -222,3 +222,29 @@ class Supply(Alertable, Base):
             "quantity": None,
             "alert_state": AlertState.INACTIVE
         }
+
+    def get_daily_changes(self, today: date | None = None) -> dict:
+        """Compute the field changes for one day's deadline decay.
+
+        The cron only concerns deadline-driven supplies: a stock-only supply's
+        alert is already kept current synchronously by
+        `get_changes_on_stock_state_change`, so there is nothing to recompute
+        when `date_due` is None. For a supply with a deadline, re-deriving via
+        `derive_alert` lets it tick closer over time (GREEN -> YELLOW -> RED ->
+        AUTO_DESTRUCT). Inactive supplies are skipped outright as an invariant
+        guard, so a stray `date_due` can never resurrect a deactivated supply.
+
+        Args:
+            today: Reference date; defaults to `date.today()`. Injectable to
+                keep the logic deterministic in tests.
+
+        Returns:
+            A `{field: value}` dict for `alert_state`, or an empty dict when
+            the supply is inactive, has no deadline, or its alert is unchanged.
+        """
+        if self.date_due is None or self.alert_state == AlertState.INACTIVE:
+            return {}
+        new_alert = self.derive_alert(self.stock_state, self.date_due, today)
+        return {
+            "alert_state":
+        } if new_alert != self.alert_state else {}

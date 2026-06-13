@@ -96,3 +96,17 @@ class Ship(Base):
         if not active:
             return 1.0
         return alerts[AlertState.GREEN] / active
+
+    def get_daily_changes(self) -> dict:
+        """Compute the ship's distance change for one day of the journey.
+
+        Advances `distance` by the day's `current_speed`, or resets it to zero
+        when any item has hit AUTO_DESTRUCT (speed `None`).
+
+        Returns:
+            A change dict for `BaseRepository.update`, always carrying the new
+            `distance`: `0.0` on an auto-destruct reset, otherwise the current
+            distance plus the day's speed.
+        """
+        speed = self.current_speed
+        return {"distance": 0.0 if speed is None else self.distance + speed}

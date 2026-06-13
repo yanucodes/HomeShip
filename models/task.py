@@ -167,6 +167,33 @@ class Task(Alertable, Base):
             "alert_state": AlertState.INACTIVE
         }
 
+    def get_daily_changes(self, default_postpone_time: timedelta,
+                          today: date | None = None) -> dict:
+        """Compute the field changes for one day's automatic escalation.
+
+        Run by the daily cron: an overdue task is treated as silently
+        postponed, raising the alert one level via `AlertState.escalate` and
+        pushing `date_due` out by `default_postpone_time`.
+
+        Args:
+            default_postpone_time: How far to push `date_due` per missed period
+                (from `settings.default_postpone_days`).
+            today: Reference date; defaults to `date.today()`. Injectable to
+                keep the logic deterministic in tests.
+
+        Returns:
+            A `{field: value}` dict for `date_due` and `alert_state`, or an
+            empty dict when the task is not overdue (nothing to change).
+        """
+        today = today or date.today()
+        if self.date_due is None or self.date_due >= today:
+            return {}
+        date_due, alert_state = self.date_due, self.alert_state
+        while date_due < today and alert_state != AlertState.AUTO_DESTRUCT:
+            alert_state = alert_state.escalate()
+            date_due += default_postpone_time
+        return {"date_due": date_due, "alert_state": alert_state}
+
     @classmethod
     def scheduled(
         cls,
