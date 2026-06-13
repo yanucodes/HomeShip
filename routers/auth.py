@@ -10,7 +10,7 @@ from services import UserService
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/login", response_model = Token)
+@router.post("/login", response_model=Token, operation_id="login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(),
           service: UserService = Depends(get_user_service)):
     """Log in with email or username and password, issuing a JWT access token.

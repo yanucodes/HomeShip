@@ -14,7 +14,7 @@ from services import ShipService
 router = APIRouter(prefix="/ships", tags=["ships"])
 
 
-@router.get("/{ship_id}", response_model=ShipRead)
+@router.get("/{ship_id}", response_model=ShipRead, operation_id="getShip")
 def get_ship(ship: Ship = Depends(get_current_users_ship_or_404)):
     """
     Fetch ship data.
@@ -29,7 +29,8 @@ def get_ship(ship: Ship = Depends(get_current_users_ship_or_404)):
     return ship
 
 
-@router.get("/{ship_id}/members", response_model=list[ShipMemberRead])
+@router.get("/{ship_id}/members", response_model=list[ShipMemberRead],
+            operation_id="listShipMembers")
 def get_members(ship: Ship = Depends(get_current_users_ship_or_404),
                 service: ShipService = Depends(get_ship_service)):
     """
@@ -47,7 +48,7 @@ def get_members(ship: Ship = Depends(get_current_users_ship_or_404),
 
 
 @router.post("/{ship_id}/members", response_model=ShipMemberRead,
-             status_code=status.HTTP_201_CREATED)
+             status_code=status.HTTP_201_CREATED, operation_id="addShipMember")
 def add_member(member_data: ShipMemberAdd,
                ship: Ship = Depends(get_current_users_ship_or_404),
                service: ShipService = Depends(get_ship_service)):
@@ -70,7 +71,8 @@ def add_member(member_data: ShipMemberAdd,
     return member
 
 
-@router.patch("/{ship_id}/members/me", response_model=ShipMemberRead)
+@router.patch("/{ship_id}/members/me", response_model=ShipMemberRead,
+              operation_id="updateCurrentMembership")
 def update_me(
         member_data: ShipMemberUpdate,
         membership: ShipMember = Depends(get_current_ship_membership_or_404),
@@ -93,7 +95,8 @@ def update_me(
     return service.update_ship_member(membership, member_data)
 
 
-@router.get("/{ship_id}/tasks", response_model=list[TaskRead])
+@router.get("/{ship_id}/tasks", response_model=list[TaskRead],
+            operation_id="listTasks")
 def get_tasks(ship: Ship = Depends(get_current_users_ship_or_404),
               service: ShipService = Depends(get_ship_service)):
     """
@@ -111,7 +114,8 @@ def get_tasks(ship: Ship = Depends(get_current_users_ship_or_404),
     return service.get_tasks(ship)
 
 
-@router.get("/{ship_id}/tasks/{task_id}", response_model=TaskRead)
+@router.get("/{ship_id}/tasks/{task_id}", response_model=TaskRead,
+            operation_id="getTask")
 def get_task(task: Task = Depends(get_task_or_404)):
     """
     Get a single task belonging to the ship.
@@ -129,7 +133,7 @@ def get_task(task: Task = Depends(get_task_or_404)):
 
 
 @router.post("/{ship_id}/tasks", response_model=TaskRead,
-             status_code=status.HTTP_201_CREATED)
+             status_code=status.HTTP_201_CREATED, operation_id="createTask")
 def add_task(task_data: TaskCreate,
              ship: Ship = Depends(get_current_users_ship_or_404),
              service: ShipService = Depends(get_ship_service)):
@@ -148,7 +152,8 @@ def add_task(task_data: TaskCreate,
     return service.create_task(ship, task_data)
 
 
-@router.patch("/{ship_id}/tasks/{task_id}", response_model=TaskRead)
+@router.patch("/{ship_id}/tasks/{task_id}", response_model=TaskRead,
+              operation_id="updateTask")
 def update_task(task_data: TaskUpdate,
                 task: Task = Depends(get_task_or_404),
                 service: ShipService = Depends(get_ship_service)):
@@ -169,7 +174,8 @@ def update_task(task_data: TaskUpdate,
     return service.update_task(task, task_data)
 
 
-@router.post("/{ship_id}/tasks/{task_id}/complete", response_model=TaskRead)
+@router.post("/{ship_id}/tasks/{task_id}/complete", response_model=TaskRead,
+             operation_id="completeTask")
 def complete_task(task: Task = Depends(get_task_or_404),
                   service: ShipService = Depends(get_ship_service)):
     """
@@ -189,7 +195,8 @@ def complete_task(task: Task = Depends(get_task_or_404),
     return service.complete_task(task)
 
 
-@router.post("/{ship_id}/tasks/{task_id}/postpone", response_model=TaskRead)
+@router.post("/{ship_id}/tasks/{task_id}/postpone", response_model=TaskRead,
+             operation_id="postponeTask")
 def postpone_task(postpone_data: TaskPostpone,
                   task: Task = Depends(get_task_or_404),
                   service: ShipService = Depends(get_ship_service)):
@@ -219,7 +226,7 @@ def postpone_task(postpone_data: TaskPostpone,
 
 
 @router.post("/{ship_id}/tasks/{task_id}/change_frequency",
-             response_model=TaskRead)
+             response_model=TaskRead, operation_id="changeTaskFrequency")
 def change_task_frequency(frequency_data: FrequencyChange,
                           task: Task = Depends(get_task_or_404),
                           service: ShipService = Depends(get_ship_service)):
@@ -242,7 +249,7 @@ def change_task_frequency(frequency_data: FrequencyChange,
 
 
 @router.post("/{ship_id}/tasks/{task_id}/deactivate",
-             response_model=TaskRead)
+             response_model=TaskRead, operation_id="deactivateTask")
 def deactivate_task(task: Task = Depends(get_task_or_404),
                     service: ShipService = Depends(get_ship_service)):
     """
@@ -262,7 +269,8 @@ def deactivate_task(task: Task = Depends(get_task_or_404),
 
 
 @router.delete("/{ship_id}/tasks/{task_id}",
-               status_code=status.HTTP_204_NO_CONTENT)
+               status_code=status.HTTP_204_NO_CONTENT,
+               operation_id="deleteTask")
 def delete_task(task: Task = Depends(get_task_or_404),
                 service: ShipService = Depends(get_ship_service)):
     """
@@ -278,7 +286,8 @@ def delete_task(task: Task = Depends(get_task_or_404),
     service.delete_task(task)
 
 
-@router.get("/{ship_id}/supplies", response_model=list[SupplyRead])
+@router.get("/{ship_id}/supplies", response_model=list[SupplyRead],
+            operation_id="listSupplies")
 def get_supplies(ship: Ship = Depends(get_current_users_ship_or_404),
                  service: ShipService = Depends(get_ship_service)):
     """
@@ -296,7 +305,8 @@ def get_supplies(ship: Ship = Depends(get_current_users_ship_or_404),
     return service.get_supplies(ship)
 
 
-@router.get("/{ship_id}/supplies/{supply_id}", response_model=SupplyRead)
+@router.get("/{ship_id}/supplies/{supply_id}", response_model=SupplyRead,
+            operation_id="getSupply")
 def get_supply(supply: Supply = Depends(get_supply_or_404)):
     """
     Get a single supply belonging to the ship.
@@ -314,7 +324,7 @@ def get_supply(supply: Supply = Depends(get_supply_or_404)):
 
 
 @router.post("/{ship_id}/supplies", response_model=SupplyRead,
-             status_code=status.HTTP_201_CREATED)
+             status_code=status.HTTP_201_CREATED, operation_id="createSupply")
 def add_supply(supply_data: SupplyCreate,
                ship: Ship = Depends(get_current_users_ship_or_404),
                service: ShipService = Depends(get_ship_service)):
@@ -333,7 +343,8 @@ def add_supply(supply_data: SupplyCreate,
     return service.create_supply(ship, supply_data)
 
 
-@router.patch("/{ship_id}/supplies/{supply_id}", response_model=SupplyRead)
+@router.patch("/{ship_id}/supplies/{supply_id}", response_model=SupplyRead,
+              operation_id="updateSupply")
 def update_supply(supply_data: SupplyUpdate,
                   supply: Supply = Depends(get_supply_or_404),
                   service: ShipService = Depends(get_ship_service)):
@@ -355,7 +366,7 @@ def update_supply(supply_data: SupplyUpdate,
 
 
 @router.post("/{ship_id}/supplies/{supply_id}/change_stock_state",
-             response_model=SupplyRead)
+             response_model=SupplyRead, operation_id="changeSupplyStockState")
 def change_supply_stock_state(stock_state_data: StockStateChange,
                               supply: Supply = Depends(get_supply_or_404),
                               service: ShipService = Depends(
@@ -380,7 +391,7 @@ def change_supply_stock_state(stock_state_data: StockStateChange,
 
 
 @router.post("/{ship_id}/supplies/{supply_id}/reschedule",
-             response_model=SupplyRead)
+             response_model=SupplyRead, operation_id="rescheduleSupply")
 def reschedule_supply(reschedule_data: SupplyReschedule,
                       supply: Supply = Depends(get_supply_or_404),
                       service: ShipService = Depends(get_ship_service)):
@@ -403,7 +414,7 @@ def reschedule_supply(reschedule_data: SupplyReschedule,
 
 
 @router.post("/{ship_id}/supplies/{supply_id}/deactivate",
-             response_model=SupplyRead)
+             response_model=SupplyRead, operation_id="deactivateSupply")
 def deactivate_supply(supply: Supply = Depends(get_supply_or_404),
                       service: ShipService = Depends(get_ship_service)):
     """
@@ -426,7 +437,8 @@ def deactivate_supply(supply: Supply = Depends(get_supply_or_404),
 
 
 @router.delete("/{ship_id}/supplies/{supply_id}",
-               status_code=status.HTTP_204_NO_CONTENT)
+               status_code=status.HTTP_204_NO_CONTENT,
+               operation_id="deleteSupply")
 def delete_supply(supply: Supply = Depends(get_supply_or_404),
                   service: ShipService = Depends(get_ship_service)):
     """

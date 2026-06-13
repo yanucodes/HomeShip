@@ -11,7 +11,8 @@ from services import UserService
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.post("", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=UserRead, status_code=status.HTTP_201_CREATED,
+             operation_id="createUser")
 def create_user(user_data: UserCreate,
                 service: UserService = Depends(get_user_service)):
     """Register a new user.
@@ -27,7 +28,7 @@ def create_user(user_data: UserCreate,
     return service.create_user(user_data)
 
 
-@router.get("/me", response_model=UserRead)
+@router.get("/me", response_model=UserRead, operation_id="getCurrentUser")
 def get_me(user: User = Depends(get_current_user)):
     """
     Fetch user data.
@@ -41,7 +42,7 @@ def get_me(user: User = Depends(get_current_user)):
     return user
 
 
-@router.patch("/me", response_model=UserRead)
+@router.patch("/me", response_model=UserRead, operation_id="updateCurrentUser")
 def update_user(user_data: UserUpdate,
                 user: User = Depends(get_current_user),
                 service: UserService = Depends(get_user_service)):
@@ -59,7 +60,8 @@ def update_user(user_data: UserUpdate,
     return service.update_user(user, user_data)
 
 
-@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT,
+               operation_id="deleteCurrentUser")
 def delete_user(user: User = Depends(get_current_user),
                 service: UserService = Depends(get_user_service)):
     """
@@ -73,7 +75,7 @@ def delete_user(user: User = Depends(get_current_user),
 
 
 @router.post("/me/ships", response_model=ShipRead,
-             status_code=status.HTTP_201_CREATED)
+             status_code=status.HTTP_201_CREATED, operation_id="createShip")
 def create_ship_for_user(ship_data: ShipCreate,
                          ship_member_data: ShipMemberCreate,
                          user: User = Depends(get_current_user),
@@ -95,7 +97,8 @@ def create_ship_for_user(ship_data: ShipCreate,
     return service.create_ship_for_user(user, ship_data, ship_member_data)
 
 
-@router.get("/me/ships", response_model=list[ShipRead])
+@router.get("/me/ships", response_model=list[ShipRead],
+            operation_id="listShips")
 def get_ships(user: User = Depends(get_current_user),
               service: UserService = Depends(get_user_service)):
     """
@@ -112,8 +115,8 @@ def get_ships(user: User = Depends(get_current_user),
     return service.get_ships(user)
 
 
-@router.patch("/me/ships/{ship_id}",
-              response_model=ShipRead)
+@router.patch("/me/ships/{ship_id}", response_model=ShipRead,
+              operation_id="updateShip")
 def update_ship(ship_data: ShipUpdate,
                 ship: Ship = Depends(get_current_users_ship_or_404),
                 service: UserService = Depends(get_user_service)):
@@ -132,7 +135,8 @@ def update_ship(ship_data: ShipUpdate,
 
 
 @router.delete("/me/ships/{ship_id}",
-                 status_code=status.HTTP_204_NO_CONTENT)
+                 status_code=status.HTTP_204_NO_CONTENT,
+                 operation_id="leaveShip")
 def leave_ship(
         membership: ShipMember = Depends(get_current_ship_membership_or_404),
         service: UserService = Depends(get_user_service)):
