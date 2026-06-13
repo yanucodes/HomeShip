@@ -24,6 +24,17 @@ class ShipService:
         self.supply_repository = supply_repository
         self.user_repository = user_repository
 
+    @staticmethod
+    def _supply_deadline_windows() -> tuple[timedelta, timedelta]:
+        """Build the supply deadline urgency windows from settings.
+
+        Returns:
+            The `(red_within, yellow_within)` timedeltas that
+            `Supply.derive_alert` uses to grade a deadline supply's urgency.
+        """
+        return (timedelta(days=settings.supply_deadline_red_days),
+                timedelta(days=settings.supply_deadline_yellow_days))
+
     def get_ship_by_id(self, ship_id: uuid.UUID) -> Ship | None:
         """
         Find ship by its ID.
@@ -55,12 +66,14 @@ class ShipService:
         """
         today = today or date.today()
         postpone_time = timedelta(days=settings.default_postpone_days)
+        red_within, yellow_within = self._supply_deadline_windows()
         self.ship_repository.update(ship, ship.get_daily_changes())
         for task in ship.tasks:
             if changes := task.get_daily_changes(postpone_time, today):
                 self.task_repository.update(task, changes)
         for supply in ship.supplies:
-            if changes := supply.get_daily_changes(today):
+            if changes := supply.get_daily_changes(
+                    red_within, yellow_within, today):
                 self.supply_repository.update(supply, changes)
 
     def create_task(self, ship: Ship, task_data: TaskCreate) -> Task:
@@ -214,9 +227,12 @@ class ShipService:
         Returns:
             The newly created Supply.
         """
+        red_within, yellow_within = self._supply_deadline_windows()
         supply = Supply.set_alert_on_creation(
             ship_id=ship.ship_id,
             name=supply_data.name,
+            red_within=red_within,
+            yellow_within=yellow_within,
             stock_state=supply_data.stock_state,
             quantity=supply_data.quantity,
             date_due=supply_data.date_due,
@@ -283,8 +299,10 @@ class ShipService:
         Returns:
             The updated supply.
         """
+        red_within, yellow_within = self._supply_deadline_windows()
         return self.supply_repository.update(
-            supply, supply.get_changes_on_stock_state_change(stock_state))
+            supply, supply.get_changes_on_stock_state_change(
+                stock_state, red_within, yellow_within))
 
     def reschedule_supply(self, supply: Supply, date_due: date) -> Supply:
         """
@@ -297,8 +315,10 @@ class ShipService:
         Returns:
             The updated supply.
         """
+        red_within, yellow_within = self._supply_deadline_windows()
         return self.supply_repository.update(
-            supply, supply.get_changes_on_reschedule(date_due))
+            supply, supply.get_changes_on_reschedule(
+                date_due, red_within, yellow_within))
 
     def deactivate_supply(self, supply: Supply) -> Supply:
         """

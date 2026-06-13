@@ -80,26 +80,37 @@ class Supply(Alertable, Base):
     ship: Mapped["Ship"] = relationship(back_populates="supplies")
 
     @staticmethod
-    def derive_alert(stock_state: StockState, date_due: date | None = None,
+    def derive_alert(stock_state: StockState, date_due: date | None,
+                     red_within: timedelta, yellow_within: timedelta,
                      today: date | None = None) -> AlertState:
-        """
-        Derive alert state from `date_due` proximity, or `stock_state` when
-        there is no deadline.
+        """Derive a supply's alert state from its stock level and deadline.
 
-        The presence of a `date_due` selects the mode:
+        Two kinds of supply are modelled, and the presence of a `date_due`
+        selects which:
 
-        * No deadline: the alert reflects the stock level alone — `green` if
-          in stock, `yellow` if running low, `red` if out of stock.
-        * Deadline set: the alert reflects how close the deadline is,
-          regardless of stock level — `green` while it is two or more days
-          away, `yellow` the day before, `red` on the day itself, and
-          `auto-destruct` once it has passed.
+        * **Regularly-bought supplies** (no deadline, e.g. milk): the alert is
+          purely the stock signal — `green` in stock, `yellow` running low,
+          `red` out of stock.
+        * **Deadline supplies** (a `date_due`, e.g. "candles by the party"):
+          if the item is already `IN_STOCK` there is nothing to buy, so the
+          alert is `green` regardless of the deadline. Otherwise, urgency is
+          driven by how close the deadline is — `red` once within
+          `red_within`, `yellow` once within `yellow_within`, `green` while
+          further out, and `auto-destruct` once the deadline has passed.
+
+        `RUNNING_LOW` does not earn the in-stock pass: for a deadline item,
+        having some but not enough still means a purchase is pending, so it
+        falls into the proximity branch alongside `OUT_OF_STOCK`.
 
         Args:
-            stock_state: Whether the item is currently available in the
-                household in sufficient amount. Used only when `date_due` is
-                None.
-            date_due: Deadline for buying the item, or None.
+            stock_state: Whether the item is currently available in sufficient
+                amount.
+            date_due: Deadline for buying the item, or None for a
+                regularly-bought supply.
+            red_within: Treat the deadline as RED-level urgent once it is this
+                close (from `settings.supply_deadline_red_days`).
+            yellow_within: Treat the deadline as YELLOW-level urgent once it is
+                this close (from `settings.supply_deadline_yellow_days`).
             today: Current date. Defaults to `date.today()`.
 
         Returns:
@@ -115,16 +126,22 @@ class Supply(Alertable, Base):
                 return AlertState.YELLOW
             return AlertState.RED
 
+        # Deadline set: already having the item means nothing to buy.
+        if stock_state == StockState.IN_STOCK:
+            return AlertState.GREEN
+
+        # Not in stock: urgency is how close the deadline is.
         if today > date_due:
             return AlertState.AUTO_DESTRUCT
-        if today == date_due:
+        if date_due <= today + red_within:
             return AlertState.RED
-        if date_due == today + timedelta(days=1):
+        if date_due <= today + yellow_within:
             return AlertState.YELLOW
         return AlertState.GREEN
 
     @classmethod
     def set_alert_on_creation(cls, *, ship_id: uuid.UUID, name: str,
+                              red_within: timedelta, yellow_within: timedelta,
                               stock_state: StockState | None = None,
                               quantity: int | None = None,
                               date_due: date | None = None,
@@ -138,6 +155,10 @@ class Supply(Alertable, Base):
         Args:
             ship_id: ID of the ship the supply belongs to.
             name: Display name of the supply (e.g. "Shampoo").
+            red_within: Deadline RED-urgency window, forwarded to
+                `derive_alert`.
+            yellow_within: Deadline YELLOW-urgency window, forwarded to
+                `derive_alert`.
             stock_state: Current stock level. Defaults to
                 `StockState.OUT_OF_STOCK` — supplies are usually added the
                 moment the crew runs out.
@@ -156,11 +177,13 @@ class Supply(Alertable, Base):
             stock_state=stock_state,
             quantity=quantity,
             date_due=date_due,
-            alert_state=cls.derive_alert(stock_state, date_due, today),
+            alert_state=cls.derive_alert(
+                stock_state, date_due, red_within, yellow_within, today),
         )
 
     def get_changes_on_stock_state_change(
-        self, stock_state: StockState, today: date | None = None
+        self, stock_state: StockState, red_within: timedelta,
+        yellow_within: timedelta, today: date | None = None
     ) -> dict:
         """Compute the field changes when the supply's stock state changes.
 
@@ -171,6 +194,10 @@ class Supply(Alertable, Base):
 
         Args:
             stock_state: New stock state for the supply.
+            red_within: Deadline RED-urgency window, forwarded to
+                `derive_alert`.
+            yellow_within: Deadline YELLOW-urgency window, forwarded to
+                `derive_alert`.
             today: Reference date for derivation; defaults to `date.today()`.
                 Injectable to keep the logic deterministic in tests.
 
@@ -179,11 +206,13 @@ class Supply(Alertable, Base):
         """
         return {
             "stock_state": stock_state,
-            "alert_state": self.derive_alert(stock_state, self.date_due, today)
+            "alert_state": self.derive_alert(
+                stock_state, self.date_due, red_within, yellow_within, today)
         }
 
     def get_changes_on_reschedule(
-        self, date_due: date, today: date | None = None
+        self, date_due: date, red_within: timedelta,
+        yellow_within: timedelta, today: date | None = None
     ) -> dict:
         """Compute the field changes when the supply's deadline is rescheduled.
 
@@ -194,6 +223,10 @@ class Supply(Alertable, Base):
         Args:
             date_due: New buy-by deadline for the supply, already validated by
                 the `SupplyReschedule` schema.
+            red_within: Deadline RED-urgency window, forwarded to
+                `derive_alert`.
+            yellow_within: Deadline YELLOW-urgency window, forwarded to
+                `derive_alert`.
             today: Reference date for derivation; defaults to `date.today()`.
                 Injectable to keep the logic deterministic in tests.
 
@@ -202,7 +235,8 @@ class Supply(Alertable, Base):
         """
         return {
             "date_due": date_due,
-            "alert_state": self.derive_alert(self.stock_state, date_due, today)
+            "alert_state": self.derive_alert(
+                self.stock_state, date_due, red_within, yellow_within, today)
         }
 
     def get_changes_on_deactivation(self) -> dict:
@@ -223,7 +257,9 @@ class Supply(Alertable, Base):
             "alert_state": AlertState.INACTIVE
         }
 
-    def get_daily_changes(self, today: date | None = None) -> dict:
+    def get_daily_changes(self, red_within: timedelta,
+                          yellow_within: timedelta,
+                          today: date | None = None) -> dict:
         """Compute the field changes for one day's deadline decay.
 
         The cron only concerns deadline-driven supplies: a stock-only supply's
@@ -235,6 +271,10 @@ class Supply(Alertable, Base):
         guard, so a stray `date_due` can never resurrect a deactivated supply.
 
         Args:
+            red_within: Deadline RED-urgency window, forwarded to
+                `derive_alert`.
+            yellow_within: Deadline YELLOW-urgency window, forwarded to
+                `derive_alert`.
             today: Reference date; defaults to `date.today()`. Injectable to
                 keep the logic deterministic in tests.
 
@@ -244,7 +284,8 @@ class Supply(Alertable, Base):
         """
         if self.date_due is None or self.alert_state == AlertState.INACTIVE:
             return {}
-        new_alert = self.derive_alert(self.stock_state, self.date_due, today)
+        new_alert = self.derive_alert(
+            self.stock_state, self.date_due, red_within, yellow_within, today)
         return {
             "alert_state": new_alert
         } if new_alert != self.alert_state else {}
