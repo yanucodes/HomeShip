@@ -246,5 +246,5 @@ class Supply(Alertable, Base):
             return {}
         new_alert = self.derive_alert(self.stock_state, self.date_due, today)
         return {
-            "alert_state":
+            "alert_state": new_alert
         } if new_alert != self.alert_state else {}
