@@ -5,7 +5,6 @@ ship's overall alert level can be computed uniformly across both domains
 (e.g. `max(state for state in all_tasks_and_supplies)`).
 """
 
-from datetime import date
 import enum
 
 
@@ -40,24 +39,3 @@ class AlertState(enum.Enum):
         if self == AlertState.RED:
             return AlertState.AUTO_DESTRUCT
         return self
-
-    @classmethod
-    def from_due_date(cls, date_due: date | None) -> "AlertState":
-        """
-        Derive the initial alert state for a newly created task or supply
-        from its due date.
-
-        Args:
-            date_due: deadline for the task or getting a supply, or None if
-                the item has no deadline.
-
-        Returns:
-            `AlertState.INACTIVE` if no deadline was set,
-            `AlertState.GREEN` if the deadline is today or later, and
-            `AlertState.YELLOW` if it has already passed.
-        """
-        if date_due is None:
-            return AlertState.INACTIVE
-        if date_due >= date.today():
-            return AlertState.GREEN
-        return AlertState.YELLOW

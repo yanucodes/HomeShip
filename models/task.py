@@ -86,6 +86,32 @@ class Task(Alertable, Base):
             date_last = None
         return date_last, date_due
 
+    @staticmethod
+    def derive_alert(date_due: date | None,
+                     today: date | None = None) -> AlertState:
+        """Derive a task's alert state from its due date.
+
+        A task's alert reflects only whether it is on schedule: `YELLOW` if
+        a deadline already passed, `GREEN` otherwise. `INACTIVE` if no
+        deadline is set. `RED` and `AUTO_DESTRUCT` are produced separately
+        by postponing (either by user or daily escalation).
+
+        Args:
+            date_due: Date the task is due, or None if it has no schedule.
+            today: Reference date; defaults to `date.today()`. Injectable to
+                keep the logic deterministic in tests.
+
+        Returns:
+            `AlertState.INACTIVE` if there is no due date, `AlertState.GREEN`
+            if it is today or later, and `AlertState.YELLOW` if it has passed.
+        """
+        if date_due is None:
+            return AlertState.INACTIVE
+        today = today or date.today()
+        if date_due >= today:
+            return AlertState.GREEN
+        return AlertState.YELLOW
+
     def get_changes_on_completing(self, today: date | None = None) -> dict:
         """Compute the field changes when completing the task.
 
@@ -102,7 +128,7 @@ class Task(Alertable, Base):
         return {
             "date_last": today,
             "date_due": date_due,
-            "alert_state": AlertState.from_due_date(date_due)
+            "alert_state": self.derive_alert(date_due, today)
         }
 
     def get_changes_on_postponing(self, date_due: date) -> dict:
@@ -131,7 +157,7 @@ class Task(Alertable, Base):
         Compute the field changes when changing the frequency of the task.
 
         A new due date is set for recurrent tasks (date_last + frequency).
-        Alert is set according to due_date via `AlertState.from_due_date`.
+        Alert is set according to due_date via `Task.derive_alert`.
 
         Args:
             frequency: New frequency for the task.
@@ -149,7 +175,7 @@ class Task(Alertable, Base):
             "frequency": frequency,
             "date_last": date_last,
             "date_due": date_due,
-            "alert_state": AlertState.from_due_date(date_due)
+            "alert_state": self.derive_alert(date_due, today)
         }
 
     def get_changes_on_deactivation(self) -> dict:
@@ -210,7 +236,7 @@ class Task(Alertable, Base):
 
         Encapsulates "how to construct a valid task" in one place. The dates
         are filled in via `derive_dates` and the alert state via
-        `AlertState.from_due_date`.
+        `derive_alert`.
 
         Args:
             ship_id: ID of the ship the task belongs to.
@@ -233,5 +259,5 @@ class Task(Alertable, Base):
             frequency=frequency,
             date_last=date_last,
             date_due=date_due,
-            alert_state=AlertState.from_due_date(date_due),
+            alert_state=cls.derive_alert(date_due, today),
         )
