@@ -67,7 +67,7 @@ class Supply(Alertable, Base):
     ship_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("ships.ship_id"), nullable=False
     )
-    name: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
     stock_state: Mapped[StockState] = mapped_column(
         SqlEnum(StockState, name="stock_state",
                 values_callable=lambda enum_cls: [m.value for m in enum_cls],

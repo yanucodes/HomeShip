@@ -52,7 +52,7 @@ class Task(Alertable, Base):
         UUID(as_uuid=True), ForeignKey("ships.ship_id"), nullable=False
     )
     frequency: Mapped[timedelta | None] = mapped_column(Interval)
-    content: Mapped[str] = mapped_column(String, nullable=False)
+    content: Mapped[str] = mapped_column(String(200), nullable=False)
     date_last: Mapped[date | None] = mapped_column(Date)
 
     ship: Mapped["Ship"] = relationship(back_populates="tasks")

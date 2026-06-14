@@ -47,7 +47,7 @@ class ShipMember(Base):
         UUID(as_uuid=True), ForeignKey("ships.ship_id"), primary_key=True
     )
     role: Mapped[str] = mapped_column(
-        String, nullable=False, default="Crew Member"
+        String(30), nullable=False, default="Crew Member"
     )
 
     user: Mapped["User"] = relationship(back_populates="ship_memberships")

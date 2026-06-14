@@ -46,7 +46,7 @@ class Ship(Base):
     ship_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    shipname: Mapped[str] = mapped_column(String, nullable=False)
+    shipname: Mapped[str] = mapped_column(String(50), nullable=False)
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     distance: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
 
