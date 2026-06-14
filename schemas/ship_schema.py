@@ -13,7 +13,6 @@ ShipName = bounded_str(min_length=1, max_length=50)
 
 class ShipBase(BaseModel):
     shipname: ShipName
-    start_date: date
 
 
 class ShipCreate(ShipBase):
@@ -22,6 +21,7 @@ class ShipCreate(ShipBase):
 
 class ShipRead(ShipBase):
     ship_id: UUID
+    start_date: date
     distance: float
     model_config = ConfigDict(from_attributes=True)
 

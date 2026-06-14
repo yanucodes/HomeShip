@@ -1,5 +1,6 @@
 """Service layer for User: orchestrates operations on user and their ships."""
 import uuid
+from datetime import date
 from models import Ship, ShipMember, User
 from repositories import ShipMemberRepository, ShipRepository, UserRepository
 from schemas import (ShipCreate, ShipMemberCreate, ShipUpdate, UserCreate,
@@ -114,7 +115,8 @@ class UserService:
         Returns:
             The newly created Ship, with its server-generated ship_id.
         """
-        ship = self.ship_repository.add(Ship(**ship_data.model_dump()))
+        ship = self.ship_repository.add(
+            Ship(**ship_data.model_dump(), start_date=date.today()))
         self.ship_member_repository.add(
             ShipMember(
                 user_id=user.user_id,

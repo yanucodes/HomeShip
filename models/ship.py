@@ -28,8 +28,10 @@ class Ship(Base):
         ship_id: Server-side UUID primary key. Generated in Python via
             `uuid.uuid4` on insert if the caller does not provide one.
         shipname: Non-null display name of the ship.
-        start_date: Date the ship's journey began. Used to compute distance
-            traveled (one light year per alert-free day).
+        start_date: Date the current journey began. Set server-side to today
+            when the ship is created, and reset to today each time the ship
+            auto-destructs, so it always marks the start of the ongoing,
+            uninterrupted journey.
         distance: Light years travelled so far. Recomputed and overwritten by
             the daily cron job (one light year per alert-free day), stored
             rounded to one decimal place. Non-null; defaults to 0.0 for a
@@ -97,16 +99,25 @@ class Ship(Base):
             return 1.0
         return alerts[AlertState.GREEN] / active
 
-    def get_daily_changes(self) -> dict:
-        """Compute the ship's distance change for one day of the journey.
+    def get_daily_changes(self, today: date | None = None) -> dict:
+        """Compute the ship's changes for one day of the journey.
 
-        Advances `distance` by the day's `current_speed`, or resets it to zero
-        when any item has hit AUTO_DESTRUCT (speed `None`).
+        Advances `distance` by the day's `current_speed`. When any item has hit
+        AUTO_DESTRUCT (speed `None`) the journey is wiped: `distance` resets to
+        zero and `start_date` resets to today, so the ship begins a fresh
+        journey from the day of the disaster.
+
+        Args:
+            today: Reference date for an auto-destruct reset; defaults to
+                `date.today()`. Injectable to keep the logic deterministic in
+                tests.
 
         Returns:
-            A change dict for `BaseRepository.update`, always carrying the new
-            `distance`: `0.0` on an auto-destruct reset, otherwise the current
-            distance plus the day's speed.
+            A change dict for `BaseRepository.update`. On an auto-destruct
+            reset, `distance` (0.0) and `start_date` (today); otherwise just
+            the new `distance` (current distance plus the day's speed).
         """
         speed = self.current_speed
-        return {"distance": 0.0 if speed is None else self.distance + speed}
+        if speed is None:
+            return {"distance": 0.0, "start_date": today or date.today()}
+        return {"distance": self.distance + speed}

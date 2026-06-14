@@ -67,7 +67,7 @@ class ShipService:
         today = today or date.today()
         postpone_time = timedelta(days=settings.default_postpone_days)
         red_within, yellow_within = self._supply_deadline_windows()
-        self.ship_repository.update(ship, ship.get_daily_changes())
+        self.ship_repository.update(ship, ship.get_daily_changes(today))
         for task in ship.tasks:
             if changes := task.get_daily_changes(postpone_time, today):
                 self.task_repository.update(task, changes)
