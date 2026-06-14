@@ -1,7 +1,7 @@
 """User ORM model.
 
 Maps to the `users` table. A user is identified by a UUID primary key and
-authenticates with a username/email plus a bcrypt password hash. The plain
+authenticates with a username/email plus an Argon2 password hash. The plain
 password is never stored — only `password_hash`.
 """
 
@@ -27,7 +27,7 @@ class User(Base):
         username: Unique, non-null display handle used for login.
         display_name: Name displayed in UI.
         email: Unique, non-null email address used for login and contact.
-        password_hash: bcrypt hash of the user's password. The raw password
+        password_hash: Argon2 hash of the user's password. The raw password
             must never be persisted; hash it at the authentication layer
             before assigning.
     """

@@ -3,11 +3,16 @@ from datetime import datetime, timedelta, timezone
 import uuid
 
 import jwt
-from passlib.context import CryptContext
+from argon2 import PasswordHasher
+from argon2.exceptions import InvalidHashError, VerificationError
 
 from config import settings
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+_password_hasher = PasswordHasher()
+
+# Precomputed hash of a throwaway value. `verify_dummy` verifies against it so
+# an unknown-account login costs the same as a real one (see that function).
+_DUMMY_HASH = _password_hasher.hash("dummy-password-for-timing")
 
 
 def hash_password(password: str) -> str:
@@ -17,9 +22,9 @@ def hash_password(password: str) -> str:
         password: The plain-text password from the signup request.
 
     Returns:
-        A bcrypt hash string to persist as `password_hash`.
+        An Argon2 hash string to persist as `password_hash`.
     """
-    return _pwd_context.hash(password)
+    return _password_hasher.hash(password)
 
 
 def verify_password(password: str, password_hash: str) -> bool:
@@ -32,7 +37,10 @@ def verify_password(password: str, password_hash: str) -> bool:
     Returns:
         True if the password matches the hash, False otherwise.
     """
-    return _pwd_context.verify(password, password_hash)
+    try:
+        return _password_hasher.verify(password_hash, password)
+    except (VerificationError, InvalidHashError):
+        return False
 
 
 def verify_dummy() -> None:
@@ -43,7 +51,10 @@ def verify_dummy() -> None:
     Without it, the faster "no such user" path lets an attacker enumerate
     which emails or usernames exist by measuring response time.
     """
-    _pwd_context.dummy_verify()
+    try:
+        _password_hasher.verify(_DUMMY_HASH, "")
+    except VerificationError:
+        pass
 
 
 def create_access_token(subject: str) -> str:
