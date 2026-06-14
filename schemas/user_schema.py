@@ -5,16 +5,22 @@ from typing import Annotated
 from pydantic import (BaseModel, ConfigDict, EmailStr, StringConstraints,
                       field_validator)
 
-from schemas.validators import no_at_sign
+from schemas.validators import bounded_str, no_at_sign
 
 
-DisplayName = Annotated[str, StringConstraints(min_length=1, max_length=30)]
+Username = bounded_str(min_length=3, max_length=30)
+DisplayName = bounded_str(min_length=1, max_length=30)
+# Passwords keep surrounding whitespace — it is significant, so do not strip.
+Password = bounded_str(min_length=8, max_length=128, strip_whitespace=False)
+# RFC 5321 caps an email address at 254 characters; EmailStr handles the
+# format (and rejects empty), so only the upper bound is added here.
+Email = Annotated[EmailStr, StringConstraints(max_length=254)]
 
 
 class UserBase(BaseModel):
-    username: str
+    username: Username
     display_name: DisplayName
-    email: EmailStr
+    email: Email
 
 
 class UserWrite(UserBase):
@@ -30,7 +36,7 @@ class UserWrite(UserBase):
 
 class UserCreate(UserWrite):
     display_name: DisplayName | None = None
-    password: str
+    password: Password
 
 
 class UserRead(UserBase):
@@ -50,7 +56,7 @@ class UserPublic(BaseModel):
 
 
 class UserUpdate(UserWrite):
-    username: str | None = None
+    username: Username | None = None
     display_name: DisplayName | None = None
-    email: EmailStr | None = None
-    password: str | None = None
+    email: Email | None = None
+    password: Password | None = None

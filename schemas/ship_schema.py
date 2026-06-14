@@ -5,9 +5,14 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from schemas.validators import bounded_str
+
+
+ShipName = bounded_str(min_length=1, max_length=50)
+
 
 class ShipBase(BaseModel):
-    shipname: str
+    shipname: ShipName
     start_date: date
 
 
@@ -28,4 +33,4 @@ class ShipUpdate(BaseModel):
     Covers the free-form fields a user edits directly (currently `shipname`).
     The `start_date` is set on creation of the ship and is not editable.
     """
-    shipname: str | None = None
+    shipname: ShipName | None = None

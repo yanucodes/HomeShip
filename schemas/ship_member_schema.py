@@ -5,14 +5,18 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 from schemas.user_schema import UserPublic
+from schemas.validators import bounded_str
+
+
+Role = bounded_str(min_length=1, max_length=30)
 
 
 class ShipMemberBase(BaseModel):
-    role: str
+    role: Role
 
 
 class ShipMemberCreate(ShipMemberBase):
-    role: str = "Crew Member"
+    role: Role = "Crew Member"
 
 
 class ShipMemberAdd(ShipMemberCreate):
@@ -27,4 +31,4 @@ class ShipMemberRead(ShipMemberBase):
 
 
 class ShipMemberUpdate(ShipMemberBase):
-    role: str | None = None
+    role: Role | None = None

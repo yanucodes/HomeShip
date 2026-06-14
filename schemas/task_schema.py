@@ -8,17 +8,21 @@ from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from models.alert_state import AlertState
 from schemas.validators import (
+    bounded_str,
     not_in_future,
     not_in_past,
     positive_timedelta,
 )
 
 
+TaskContent = bounded_str(min_length=1, max_length=200)
+
+
 class TaskBase(BaseModel):
     """Shared task fields. Field definitions only, so output schemas can reuse
     them without inheriting request constraints."""
     frequency: timedelta | None = None
-    content: str
+    content: TaskContent
     date_last: date | None = None
     date_due: date | None = None
 
@@ -55,7 +59,7 @@ class TaskUpdate(BaseModel):
     they carry lifecycle logic and are changed through dedicated operations
     rather than a generic edit.
     """
-    content: str
+    content: TaskContent
 
 
 class TaskPostpone(BaseModel):

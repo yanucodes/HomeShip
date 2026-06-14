@@ -1,6 +1,37 @@
 """Reusable field validators for HomeShip schemas."""
 
 from datetime import date, timedelta
+from typing import Annotated
+
+from pydantic import StringConstraints
+
+
+def bounded_str(*, max_length: int, min_length: int = 1,
+                strip_whitespace: bool = True) -> type[str]:
+    """Build a length-bounded string type for use as a schema field.
+
+    Returns an `Annotated[str, ...]` type carrying Pydantic length
+    constraints, so fields can share one definition instead of repeating
+    `StringConstraints`. By default leading/trailing whitespace is stripped
+    before the length is checked, which also rejects whitespace-only input
+    against a `min_length` of 1.
+
+    Args:
+        max_length: Maximum number of characters allowed (after stripping).
+        min_length: Minimum number of characters required (after stripping).
+            Defaults to 1, which forbids the empty string.
+        strip_whitespace: Whether to strip surrounding whitespace before
+            validating. Pass False for fields where surrounding whitespace is
+            significant (e.g. passwords).
+
+    Returns:
+        An annotated `str` type applying the given constraints.
+    """
+    return Annotated[str, StringConstraints(
+        strip_whitespace=strip_whitespace,
+        min_length=min_length,
+        max_length=max_length,
+    )]
 
 
 def not_in_future(

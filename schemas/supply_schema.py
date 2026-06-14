@@ -7,11 +7,14 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 from models.alert_state import AlertState
 from models.supply import StockState
-from schemas.validators import non_negative, not_in_past
+from schemas.validators import bounded_str, non_negative, not_in_past
+
+
+SupplyName = bounded_str(min_length=1, max_length=200)
 
 
 class SupplyBase(BaseModel):
-    name: str
+    name: SupplyName
     stock_state: StockState
     quantity: int | None = None
     date_due: date | None = None
@@ -52,7 +55,7 @@ class SupplyUpdate(BaseModel):
     the alert state and are changed through dedicated operations rather than a
     generic edit.
     """
-    name: str | None = None
+    name: SupplyName | None = None
     quantity: int | None = None
 
     @field_validator("quantity")
