@@ -38,7 +38,11 @@ class Ship(Base):
             ship that has just set off.
         timezone: IANA timezone name of the household (e.g. "Europe/Berlin"),
             used by the daily cron to roll the ship's day over at the crew's
-            local midnight. Non-null; defaults to "UTC".
+            local rollover hour. Non-null; defaults to "UTC".
+        last_advanced_on: Ship-local date on which the daily cron last advanced
+            this ship, or None if it has never been advanced. The hourly cron
+            uses it to advance each ship exactly once per local day (and to
+            catch up a ship whose rollover-hour run was missed).
         ship_memberships: Crew membership rows for this ship. Two-way mirror
             of `ShipMember.ship`.
         tasks: Tasks belonging to this ship. Two-way mirror of `Task.ship`.
@@ -56,6 +60,7 @@ class Ship(Base):
     distance: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     timezone: Mapped[str] = mapped_column(
         String(64), nullable=False, default="UTC")
+    last_advanced_on: Mapped[date | None] = mapped_column(Date)
 
     ship_memberships: Mapped[list["ShipMember"]] = relationship(
         back_populates="ship", cascade="all, delete-orphan"
