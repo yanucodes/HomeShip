@@ -1,18 +1,22 @@
 """Pydantic schema for Ship"""
 
 from datetime import date
+from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import AfterValidator, BaseModel, ConfigDict
 
-from schemas.validators import bounded_str
+from schemas.validators import bounded_str, valid_timezone
 
 
 ShipName = bounded_str(min_length=1, max_length=50)
+# An IANA timezone name (e.g. "Europe/Berlin"), validated against zoneinfo.
+Timezone = Annotated[str, AfterValidator(valid_timezone)]
 
 
 class ShipBase(BaseModel):
     shipname: ShipName
+    timezone: Timezone = "UTC"
 
 
 class ShipCreate(ShipBase):

@@ -2,8 +2,29 @@
 
 from datetime import date, timedelta
 from typing import Annotated
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import StringConstraints
+
+
+def valid_timezone(value: str) -> str:
+    """Validate that a string names a known IANA timezone.
+
+    Args:
+        value: The timezone name to check (e.g. "Europe/Berlin").
+
+    Returns:
+        The unchanged value if it names a real IANA timezone.
+
+    Raises:
+        ValueError: If the value is not a known IANA timezone.
+    """
+    try:
+        ZoneInfo(value)
+    except (ZoneInfoNotFoundError, ValueError) as exc:
+        raise ValueError(
+            f"{value!r} is not a valid IANA timezone name") from exc
+    return value
 
 
 def bounded_str(*, max_length: int, min_length: int = 1,
