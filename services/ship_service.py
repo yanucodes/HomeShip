@@ -1,7 +1,8 @@
 """Service layer for Ship: orchestrates operations on ship, its tasks and
 supplies."""
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from config import settings
 from models import Ship, ShipMember, Supply, Task
 from models.supply import StockState
@@ -47,27 +48,48 @@ class ShipService:
         """
         return self.ship_repository.get(ship_id)
 
-    def run_daily(self, ship: Ship, today: date | None = None) -> None:
-        """Advance the ship one day: update distance and alert statuses of
-        tasks and supplies.
+    def run_daily(self, ship: Ship, now: datetime | None = None) -> bool:
+        """Advance the ship one day if its local rollover hour has arrived.
 
-        Run by the daily cron. The ship's distance change is applied first,
-        while alert states still reflect the previous day — so an item that
-        turns critical only costs progress the *next* run, giving the crew a
-        one-day grace window. Tasks and supplies are then re-evaluated: overdue
-        tasks escalate and supply deadlines tick closer. Items whose
+        Called once an hour by the cron for every ship. The reference instant
+        `now` is converted to the ship's own timezone; the ship is advanced
+        only when its local clock has reached `settings.daily_rollover_hour`
+        and it has not already been advanced today. Using "at or past the hour"
+        plus the `last_advanced_on` stamp makes the run idempotent and
+        self-healing: a ship whose rollover-hour run was missed is still caught
+        up by a later hourly run that day, and no ship is advanced twice.
+
+        When it does advance, the ship's distance change is applied first, while
+        alert states still reflect the previous day — so an item that turns
+        critical only costs progress the *next* day, giving the crew a one-day
+        grace window. Tasks and supplies are then re-evaluated: overdue tasks
+        escalate and supply deadlines tick closer. Items whose
         `get_daily_changes` returns an empty dict (not overdue, no deadline,
         inactive, or unchanged) are left untouched.
 
         Args:
             ship: Ship to advance, with its tasks and supplies loaded.
-            today: Reference date; defaults to `date.today()`. Injectable to
-                keep the logic deterministic in tests.
+            now: Reference instant; defaults to `datetime.now(timezone.utc)`.
+                Converted to the ship's timezone to derive its local date and
+                hour. Injectable to keep the logic deterministic in tests.
+
+        Returns:
+            True if the ship was advanced on this run; False if it was skipped
+            because its local rollover hour has not yet arrived or it was
+            already advanced today.
         """
-        today = today or date.today()
+        now = now or datetime.now(timezone.utc)
+        local = now.astimezone(ZoneInfo(ship.timezone))
+        today = local.date()
+        if local.hour < settings.daily_rollover_hour or (
+                ship.last_advanced_on is not None
+                and ship.last_advanced_on >= today):
+            return False
         postpone_time = timedelta(days=settings.default_postpone_days)
         red_within, yellow_within = self._supply_deadline_windows()
-        self.ship_repository.update(ship, ship.get_daily_changes(today))
+        ship_changes = ship.get_daily_changes(today)
+        ship_changes["last_advanced_on"] = today
+        self.ship_repository.update(ship, ship_changes)
         for task in ship.tasks:
             if changes := task.get_daily_changes(postpone_time, today):
                 self.task_repository.update(task, changes)
@@ -75,6 +97,7 @@ class ShipService:
             if changes := supply.get_daily_changes(
                     red_within, yellow_within, today):
                 self.supply_repository.update(supply, changes)
+        return True
 
     def create_task(self, ship: Ship, task_data: TaskCreate) -> Task:
         """Create a task belonging to the given ship.
