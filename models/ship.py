@@ -36,6 +36,9 @@ class Ship(Base):
             the daily cron job (one light year per alert-free day), stored
             rounded to one decimal place. Non-null; defaults to 0.0 for a
             ship that has just set off.
+        timezone: IANA timezone name of the household (e.g. "Europe/Berlin"),
+            used by the daily cron to roll the ship's day over at the crew's
+            local midnight. Non-null; defaults to "UTC".
         ship_memberships: Crew membership rows for this ship. Two-way mirror
             of `ShipMember.ship`.
         tasks: Tasks belonging to this ship. Two-way mirror of `Task.ship`.
@@ -51,6 +54,8 @@ class Ship(Base):
     shipname: Mapped[str] = mapped_column(String(50), nullable=False)
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     distance: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    timezone: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="UTC")
 
     ship_memberships: Mapped[list["ShipMember"]] = relationship(
         back_populates="ship", cascade="all, delete-orphan"
