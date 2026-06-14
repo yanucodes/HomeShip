@@ -7,14 +7,15 @@ from pydantic import StringConstraints
 
 
 def bounded_str(*, max_length: int, min_length: int = 1,
-                strip_whitespace: bool = True) -> type[str]:
+                strip_whitespace: bool = True,
+                pattern: str | None = None) -> type[str]:
     """Build a length-bounded string type for use as a schema field.
 
-    Returns an `Annotated[str, ...]` type carrying Pydantic length
-    constraints, so fields can share one definition instead of repeating
-    `StringConstraints`. By default leading/trailing whitespace is stripped
-    before the length is checked, which also rejects whitespace-only input
-    against a `min_length` of 1.
+    Returns an `Annotated[str, ...]` type carrying Pydantic constraints, so
+    fields can share one definition instead of repeating `StringConstraints`.
+    By default leading/trailing whitespace is stripped before the length is
+    checked, which also rejects whitespace-only input against a `min_length`
+    of 1.
 
     Args:
         max_length: Maximum number of characters allowed (after stripping).
@@ -23,6 +24,8 @@ def bounded_str(*, max_length: int, min_length: int = 1,
         strip_whitespace: Whether to strip surrounding whitespace before
             validating. Pass False for fields where surrounding whitespace is
             significant (e.g. passwords).
+        pattern: Optional regular expression the whole value must match, used
+            to restrict the allowed character set (e.g. a username charset).
 
     Returns:
         An annotated `str` type applying the given constraints.
@@ -31,6 +34,7 @@ def bounded_str(*, max_length: int, min_length: int = 1,
         strip_whitespace=strip_whitespace,
         min_length=min_length,
         max_length=max_length,
+        pattern=pattern,
     )]
 
 
@@ -94,30 +98,6 @@ def positive_timedelta(
     """
     if value is not None and value <= timedelta(0):
         raise ValueError(f"{field_description} must be positive")
-    return value
-
-
-def no_at_sign(
-    value: str | None, *, field_description: str = "value"
-) -> str | None:
-    """Reject a string (if provided) containing an '@' character.
-
-    Used to keep usernames distinct from emails, so login can tell which
-    kind of identifier it was given by whether it contains '@'.
-
-    Args:
-        value: The string to check, or None. Accepts None for optional
-            fields.
-        field_description: Name of the field, used to make the error message.
-
-    Returns:
-        The unchanged value if valid. None if the string was not provided.
-
-    Raises:
-        ValueError: If the string contains '@'.
-    """
-    if value is not None and "@" in value:
-        raise ValueError(f"{field_description} must not contain '@'")
     return value
 
 

@@ -2,13 +2,16 @@
 
 from uuid import UUID
 from typing import Annotated
-from pydantic import (BaseModel, ConfigDict, EmailStr, StringConstraints,
-                      field_validator)
+from pydantic import BaseModel, ConfigDict, EmailStr, StringConstraints
 
-from schemas.validators import bounded_str, no_at_sign
+from schemas.validators import bounded_str
 
 
-Username = bounded_str(min_length=3, max_length=30)
+# Letters, digits, and the separators _ . - only. Forbids whitespace and '@',
+# keeping usernames tidy and distinct from emails (login routes an identifier
+# with '@' to email lookup, otherwise to username lookup).
+Username = bounded_str(
+    min_length=3, max_length=30, pattern=r"^[A-Za-z0-9_.-]+$")
 DisplayName = bounded_str(min_length=1, max_length=30)
 # Passwords keep surrounding whitespace — it is significant, so do not strip.
 Password = bounded_str(min_length=8, max_length=128, strip_whitespace=False)
@@ -23,18 +26,7 @@ class UserBase(BaseModel):
     email: Email
 
 
-class UserWrite(UserBase):
-    """Base class for UserCreate and UserUpdate where username should be
-    validated."""
-    @field_validator("username")
-    @classmethod
-    def username_has_no_at_sign(cls, value: str | None) -> str | None:
-        """Usernames must not contain '@', so login can distinguish a
-        username from an email address."""
-        return no_at_sign(value, field_description="username")
-
-
-class UserCreate(UserWrite):
+class UserCreate(UserBase):
     display_name: DisplayName | None = None
     password: Password
 
@@ -55,7 +47,7 @@ class UserPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserUpdate(UserWrite):
+class UserUpdate(UserBase):
     username: Username | None = None
     display_name: DisplayName | None = None
     email: Email | None = None
