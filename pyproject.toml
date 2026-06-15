@@ -45,6 +45,12 @@ testpaths = ["tests"]
 # The virtualenv holds third-party code; never lint it.
 ignore-paths = ["alembic/versions/.*", "\\.venv/.*"]
 
+[tool.pylint.typecheck]
+# alembic.context populates its API (config, configure, run_migrations, ...)
+# dynamically at runtime, so pylint can't see those members statically and
+# emits false no-member errors. Treat the module as dynamic.
+ignored-modules = ["alembic.context"]
+
 [project.urls]
 "Source Code" = "https://github.com/yanucodes/HomeShip"
 
