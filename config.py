@@ -15,6 +15,14 @@ class Settings(BaseSettings):
         database_url: Connection URL for the application database.
         test_database_url: Connection URL for the test database, or None
             when not running tests.
+        jwt_secret_key: Secret key used to sign and verify JWT access tokens
+            (HMAC). Has no default and must be supplied via the environment.
+        jwt_algorithm: Algorithm used to sign access tokens. Defaults to
+            HS256 (symmetric HMAC), matching the single shared jwt_secret_key.
+        access_token_expire_minutes: Lifetime of an issued access token, in
+            minutes (default 60).
+        default_postpone_days: Days a task is pushed out when postponed without
+            an explicit interval (default 3).
         supply_deadline_red_days: For a not-in-stock supply with a deadline,
             the alert is RED once the deadline is within this many days
             (default 1 = today or tomorrow).
