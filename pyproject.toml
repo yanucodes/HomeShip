@@ -51,6 +51,12 @@ ignore-paths = ["alembic/versions/.*", "\\.venv/.*"]
 # emits false no-member errors. Treat the module as dynamic.
 ignored-modules = ["alembic.context"]
 
+[tool.pylint."messages control"]
+# SQLAlchemy 2.0's typed `Mapped[...]` columns trip pylint's static analysis
+# (it can't resolve `Mapped` as a subscriptable generic). The usage is correct
+# and pervasive across models/, so this check is just noise for this codebase.
+disable = ["unsubscriptable-object"]
+
 [project.urls]
 "Source Code" = "https://github.com/yanucodes/HomeShip"
 
