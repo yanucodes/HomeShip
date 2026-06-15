@@ -146,13 +146,17 @@ Interactive docs are available at `/docs` (Swagger) and `/redoc` once the app is
 1. Install dependencies (e.g. with `uv` or `pip install -e .`).
 2. Create a `.env` file. Required settings (see `.env.example` for the full list and `config.py` for defaults):
    - `DATABASE_URL` — PostgreSQL connection string (a bare `postgres://`/`postgresql://` URL is rewritten to the `psycopg` driver automatically).
-   - `JWT_SECRET_KEY`, `JWT_ALGORITHM` — token signing.
-   - Optional tuning: `ACCESS_TOKEN_EXPIRE_MINUTES`, `DEFAULT_POSTPONE_DAYS`, `SUPPLY_DEADLINE_RED_DAYS`, `SUPPLY_DEADLINE_YELLOW_DAYS`, `DAILY_ROLLOVER_HOUR`.
+   - `JWT_SECRET_KEY` — secret used to sign tokens.
+   - Optional tuning: `JWT_ALGORITHM` (default `HS256`), `ACCESS_TOKEN_EXPIRE_MINUTES`, `DEFAULT_POSTPONE_DAYS`, `SUPPLY_DEADLINE_RED_DAYS`, `SUPPLY_DEADLINE_YELLOW_DAYS`, `DAILY_ROLLOVER_HOUR`.
 3. Apply migrations: `alembic upgrade head`.
 4. Run the API: `uvicorn main:app --reload` (serves on `http://127.0.0.1:8000`).
 5. Run the daily advance manually (normally scheduled hourly): `python -m jobs.hourly_update`.
 
+## Deployment
+
+The API is deployed on [Render](https://render.com) from a `render.yaml` **Blueprint**, so the topology — a web service plus a managed PostgreSQL database — is defined as code and provisioned together. Render parses the Blueprint, creates the database first, injects its connection string into the web service as `DATABASE_URL`, and then builds and starts the app.
+
 ## Testing
 
 - **Unit / integration tests:** `pytest` against an isolated `TEST_DATABASE_URL`. Coverage currently spans the **user** domain (`tests/test_user_service.py`, `tests/test_user_endpoints.py`); ship, task, and supply suites are in progress.
-- **End-to-end smoke test:** with the server running, `./scripts/api_smoke_test.sh` drives the full user → ship → task → supply lifecycle over HTTP and asserts the responses. Requires [`httpie`](https://httpie.io) and [`jq`](https://jqlang.github.io/jq); override the target with `BASE_URL=...`.
+- **End-to-end API smoke test:** with the server running, `./scripts/api_smoke_test.sh` drives the full user → ship → task → supply lifecycle over HTTP and asserts the responses. Requires [`httpie`](https://httpie.io) and [`jq`](https://jqlang.github.io/jq); target a remote instance by passing the base URL as an argument (or via `BASE_URL=...`).
