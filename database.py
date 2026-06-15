@@ -6,16 +6,16 @@ the app.
 """
 from collections.abc import Iterator
 
-from config import settings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from config import settings
 
 # pool_pre_ping issues a lightweight check on a pooled connection before use
 # and transparently replaces it if it has gone stale, so the app survives the
 # idle-connection drops common with cloud Postgres (e.g. Render).
 engine = create_engine(settings.database_url, pool_pre_ping=True)
-SessionLocal = sessionmaker(bind=engine)
+SessionLocal = sessionmaker(bind=engine)  # pylint: disable=invalid-name
 
 
 def get_session() -> Iterator[Session]:

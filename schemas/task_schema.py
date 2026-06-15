@@ -28,6 +28,8 @@ class TaskBase(BaseModel):
 
 
 class TaskCreate(TaskBase):
+    """Fields accepted when creating a task, with schedule validation."""
+
     @field_validator("frequency")
     @classmethod
     def frequency_positive(
@@ -74,6 +76,7 @@ class TaskPostpone(BaseModel):
 
 
 class FrequencyChange(BaseModel):
+    """Body for changing a task's frequency."""
     frequency: timedelta | None
 
     @field_validator("frequency")
@@ -86,6 +89,7 @@ class FrequencyChange(BaseModel):
 
 
 class TaskRead(TaskBase):
+    """Task fields returned to clients, including derived alert state."""
     task_id: UUID
     ship_id: UUID
     alert_state: AlertState

@@ -135,8 +135,8 @@ def update_ship(ship_data: ShipUpdate,
 
 
 @router.delete("/me/ships/{ship_id}",
-                 status_code=status.HTTP_204_NO_CONTENT,
-                 operation_id="leaveShip")
+               status_code=status.HTTP_204_NO_CONTENT,
+               operation_id="leaveShip")
 def leave_ship(
         membership: ShipMember = Depends(get_current_ship_membership_or_404),
         service: UserService = Depends(get_user_service)):

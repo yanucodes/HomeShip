@@ -23,7 +23,6 @@ class UserRepository(BaseRepository[User]):
             select(User).filter_by(email=user_email)
         ).scalar_one_or_none()
 
-
     def get_by_username(self, username: str) -> User | None:
         """Fetch user by username.
 

@@ -150,7 +150,6 @@ class Task(Alertable, Base):
             "alert_state": self.alert_state.escalate()
         }
 
-
     def get_changes_on_frequency_changing(self, frequency: timedelta | None,
                                           today: date | None = None) -> dict:
         """

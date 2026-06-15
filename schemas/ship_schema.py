@@ -15,15 +15,17 @@ Timezone = Annotated[str, AfterValidator(valid_timezone)]
 
 
 class ShipBase(BaseModel):
+    """Editable ship fields shared by the read and write schemas."""
     shipname: ShipName
     timezone: Timezone = "UTC"
 
 
 class ShipCreate(ShipBase):
-    pass
+    """Fields accepted when creating a ship."""
 
 
 class ShipRead(ShipBase):
+    """Ship fields returned to clients, including derived journey data."""
     ship_id: UUID
     start_date: date
     distance: float

@@ -9,6 +9,9 @@ from security import hash_password, verify_dummy, verify_password
 
 
 class UserService:
+    """Application-service for users: registration, profile changes, and the
+    ships they create or belong to."""
+
     def __init__(self,
                  ship_repository: ShipRepository,
                  ship_member_repository: ShipMemberRepository,

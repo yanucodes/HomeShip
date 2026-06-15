@@ -1,4 +1,6 @@
 """Endpoint tests for the users router."""
+# Test names describe the scenario; per-test docstrings would be redundant.
+# pylint: disable=missing-function-docstring,redefined-outer-name
 
 
 def test_create_user_returns_201_without_password_hash(client, test_user_data):

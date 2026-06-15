@@ -1,3 +1,12 @@
+"""Alembic migration environment.
+
+Wires the application's database URL and model metadata into Alembic's
+migration context and runs migrations in offline or online mode.
+"""
+# pylint: disable=invalid-name
+# Alembic's scaffold uses module-level names such as `config` and
+# `target_metadata` that don't follow pylint's UPPER_CASE constant convention;
+# keeping the conventional names is intentional.
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -5,7 +14,7 @@ from sqlalchemy import pool
 
 from alembic import context
 
-from database import settings
+from config import settings
 from models import Base
 
 # this is the Alembic Config object, which provides

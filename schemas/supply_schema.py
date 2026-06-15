@@ -14,6 +14,7 @@ SupplyName = bounded_str(min_length=1, max_length=200)
 
 
 class SupplyBase(BaseModel):
+    """Supply fields shared by the read and write schemas."""
     name: SupplyName
     stock_state: StockState
     quantity: int | None = None
@@ -37,10 +38,12 @@ class SupplyWrite(SupplyBase):
 
 
 class SupplyCreate(SupplyWrite):
+    """Fields accepted when adding a supply; defaults to out of stock."""
     stock_state: StockState = StockState.OUT_OF_STOCK
 
 
 class SupplyRead(SupplyBase):
+    """Supply fields returned to clients, including derived alert state."""
     supply_id: UUID
     ship_id: UUID
     alert_state: AlertState

@@ -18,6 +18,14 @@ app.include_router(auth.router)
 
 @app.get("/")
 async def root():
+    """Root greeting / liveness check.
+
+    Confirms the API process is up and serving requests (does not touch the
+    database — see `/health` for a readiness probe).
+
+    Returns:
+        A welcome message for the crew.
+    """
     return {"message": "Welcome aboard your HomeShip!"}
 
 

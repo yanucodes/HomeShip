@@ -21,17 +21,20 @@ Email = Annotated[EmailStr, StringConstraints(max_length=254)]
 
 
 class UserBase(BaseModel):
+    """Identity fields shared by the user read and write schemas."""
     username: Username
     display_name: DisplayName
     email: Email
 
 
 class UserCreate(UserBase):
+    """Fields accepted when registering a new user."""
     display_name: DisplayName | None = None
     password: Password
 
 
 class UserRead(UserBase):
+    """User fields returned to clients (never the password hash)."""
     user_id: UUID
     model_config = ConfigDict(from_attributes=True)
 
@@ -48,6 +51,7 @@ class UserPublic(BaseModel):
 
 
 class UserUpdate(UserBase):
+    """Fields accepted when updating a user; all optional."""
     username: Username | None = None
     display_name: DisplayName | None = None
     email: Email | None = None

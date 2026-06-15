@@ -61,13 +61,13 @@ def get_current_user(token: str = Depends(oauth2_scheme),
     """
     credentials_error = HTTPException(
         status_code=401,
-        detail="Could not validate  credentials",
+        detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"}
     )
     try:
         user_id = decode_access_token(token)
-    except jwt.PyJWTError:
-        raise credentials_error
+    except jwt.PyJWTError as exc:
+        raise credentials_error from exc
     user = service.get_user_by_id(user_id)
     if user is None:
         raise credentials_error

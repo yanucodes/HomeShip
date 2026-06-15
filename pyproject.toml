@@ -52,10 +52,25 @@ ignore-paths = ["alembic/versions/.*", "\\.venv/.*"]
 ignored-modules = ["alembic.context"]
 
 [tool.pylint."messages control"]
-# SQLAlchemy 2.0's typed `Mapped[...]` columns trip pylint's static analysis
-# (it can't resolve `Mapped` as a subscriptable generic). The usage is correct
-# and pervasive across models/, so this check is just noise for this codebase.
-disable = ["unsubscriptable-object"]
+# Disabled checks, each a false positive for this codebase's idioms:
+#  - unsubscriptable-object: SQLAlchemy 2.0's typed `Mapped[...]` columns are
+#    correct but pylint can't resolve `Mapped` as a subscriptable generic.
+#  - too-few-public-methods: ORM models, Pydantic schemas and Settings are
+#    declarative data containers by design; the heuristic doesn't apply.
+disable = ["unsubscriptable-object", "too-few-public-methods"]
+
+[tool.pylint.design]
+# Thresholds raised to fit this codebase's deliberate patterns:
+#  - max-args / max-positional-arguments: keyword-only factory builders
+#    (Supply.set_alert_on_creation, Task.scheduled) and the ShipService DI
+#    constructor (6 injected repositories) legitimately take more.
+#  - max-returns: Supply.derive_alert is a flat decision tree of guard returns.
+#  - max-public-methods: ShipService is a deliberate facade over tasks,
+#    supplies and members.
+max-args = 9
+max-positional-arguments = 6
+max-returns = 8
+max-public-methods = 25
 
 [project.urls]
 "Source Code" = "https://github.com/yanucodes/HomeShip"

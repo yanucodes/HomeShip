@@ -1,4 +1,6 @@
 """Service-layer tests for UserService."""
+# Test names describe the scenario; per-test docstrings would be redundant.
+# pylint: disable=missing-function-docstring,redefined-outer-name
 from sqlalchemy.orm import Session
 
 from repositories import (

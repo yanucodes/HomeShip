@@ -13,6 +13,9 @@ from schemas import (ShipMemberAdd, ShipMemberUpdate, TaskCreate, TaskUpdate,
 
 
 class ShipService:
+    """Application-service for a ship and the tasks, supplies and crew it
+    owns."""
+
     def __init__(self,
                  ship_repository: ShipRepository,
                  ship_member_repository: ShipMemberRepository,
@@ -59,11 +62,11 @@ class ShipService:
         self-healing: a ship whose rollover-hour run was missed is still caught
         up by a later hourly run that day, and no ship is advanced twice.
 
-        When it does advance, the ship's distance change is applied first, while
-        alert states still reflect the previous day — so an item that turns
-        critical only costs progress the *next* day, giving the crew a one-day
-        grace window. Tasks and supplies are then re-evaluated: overdue tasks
-        escalate and supply deadlines tick closer. Items whose
+        When it does advance, the ship's distance change is applied first,
+        while alert states still reflect the previous day — so an item that
+        turns critical only costs progress the *next* day, giving the crew a
+        one-day grace window. Tasks and supplies are then re-evaluated:
+        overdue tasks escalate and supply deadlines tick closer. Items whose
         `get_daily_changes` returns an empty dict (not overdue, no deadline,
         inactive, or unchanged) are left untouched.
 
@@ -174,7 +177,8 @@ class ShipService:
         Returns:
             Updated Task object.
         """
-        return self.task_repository.update(task, task.get_changes_on_completing())
+        return self.task_repository.update(task,
+                                           task.get_changes_on_completing())
 
     def postpone_task(self, task: Task, date_due: date) -> Task | None:
         """

@@ -1,4 +1,6 @@
 """Shared pytest fixtures: test database, rollback-per-test session, client."""
+# Using a fixture by depending on its name is the pytest idiom, not a bug.
+# pylint: disable=redefined-outer-name
 import json
 from pathlib import Path
 
