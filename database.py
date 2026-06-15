@@ -11,7 +11,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 
-engine = create_engine(settings.database_url)
+# pool_pre_ping issues a lightweight check on a pooled connection before use
+# and transparently replaces it if it has gone stale, so the app survives the
+# idle-connection drops common with cloud Postgres (e.g. Render).
+engine = create_engine(settings.database_url, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine)
 
 
