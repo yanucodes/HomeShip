@@ -11,14 +11,17 @@
 #   - jq                          -- https://jqlang.github.io/jq
 #
 # Usage:
-#   ./scripts/api_smoke_test.sh
+#   ./scripts/api_smoke_test.sh                              # local default
+#   ./scripts/api_smoke_test.sh https://homeship-api.onrender.com   # remote
 #   BASE_URL=http://127.0.0.1:8000 ./scripts/api_smoke_test.sh
 #
 # Exit code is 0 only if every assertion passed.
 
 set -uo pipefail
 
-BASE_URL="${BASE_URL:-http://127.0.0.1:8000}"
+# Precedence: first CLI argument, then $BASE_URL, then the local default.
+BASE_URL="${1:-${BASE_URL:-http://127.0.0.1:8000}}"
+BASE_URL="${BASE_URL%/}"   # tolerate a trailing slash on a pasted URL
 
 # --- pretty output -----------------------------------------------------------
 if [[ -t 1 ]]; then
