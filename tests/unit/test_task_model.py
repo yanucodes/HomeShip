@@ -6,6 +6,7 @@ from datetime import date, timedelta
 import pytest
 
 from models.alert_state import AlertState
+from models.task import Task
 
 TODAY = date(2026, 6, 17)
 
