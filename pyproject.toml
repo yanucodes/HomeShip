@@ -59,6 +59,13 @@ ignored-modules = ["alembic.context"]
 #    declarative data containers by design; the heuristic doesn't apply.
 disable = ["unsubscriptable-object", "too-few-public-methods"]
 
+[tool.pylint.similarities]
+# Each test module owns its own fixtures/data so the suites stay independent
+# (deliberate duplication, not a DRY violation). Raise the duplicate-code
+# threshold above a typical small fixture so it stops flagging those, while
+# still catching genuinely large copy-paste blocks.
+min-similarity-lines = 10
+
 [tool.pylint.design]
 # Thresholds raised to fit this codebase's deliberate patterns:
 #  - max-args / max-positional-arguments: keyword-only factory builders
