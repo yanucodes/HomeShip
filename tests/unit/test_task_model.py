@@ -213,3 +213,27 @@ class TestGetChangesOnCompleting:
         )
         changes = task.get_changes_on_completing(today=TODAY)
         assert changes["alert_state"] == AlertState.INACTIVE
+
+
+class TestGetChangesOnPostponing:
+    """Tests for Task.get_changes_on_postponing: the field changes (date_due,
+    alert_state) produced when a task is pushed to a later due date."""
+
+    def test_date_due_is_updated(self):
+        task = Task(
+            date_due=TODAY,
+            alert_state=AlertState.GREEN
+        )
+        new_date = TODAY + timedelta(days=7)
+        changes = task.get_changes_on_postponing(date_due=new_date)
+        assert changes["date_due"] == new_date
+
+    def test_alert_state_escalates(self):
+        task = Task(
+            date_due=TODAY,
+            alert_state=AlertState.YELLOW
+        )
+        new_date = TODAY + timedelta(days=7)
+        changes = task.get_changes_on_postponing(date_due=new_date)
+        assert changes["alert_state"] == AlertState.RED
+        
