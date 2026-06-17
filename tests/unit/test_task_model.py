@@ -12,6 +12,9 @@ TODAY = date(2026, 6, 17)
 
 
 class TestDeriveDates:
+    """Tests for Task.derive_dates: filling in date_last/date_due from the
+    fields the client supplied across the lifecycle states."""
+
     def test_task_is_not_inactive_if_frequency_is_given(self):
         _, date_due = Task.derive_dates(
             frequency=timedelta(days=7),
@@ -107,6 +110,9 @@ class TestDeriveDates:
 
 
 class TestDeriveAlert:
+    """Tests for Task.derive_alert: grading a task's alert state from its due
+    date (INACTIVE / GREEN / YELLOW)."""
+
     def test_no_due_date_is_inactive(self):
         assert Task.derive_alert(None, today=TODAY) == AlertState.INACTIVE
 
@@ -124,6 +130,9 @@ class TestDeriveAlert:
 
 
 class TestGetChangesOnCompleting:
+    """Tests for Task.get_changes_on_completing: the field changes (date_last,
+    date_due, alert_state) produced when a task is marked complete."""
+
     FREQUENCY_FOR_RECURRING = timedelta(days=7)
 
     def test_new_date_last_is_today_for_recurring(self):
