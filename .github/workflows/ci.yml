@@ -1,0 +1,33 @@
+name: CI
+
+# WHEN to run: pushes to main, and every pull request.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest        # a fresh Linux VM, discarded after the run
+
+    steps:
+      # 1. Clone the repo onto the runner.
+      - uses: actions/checkout@v4
+
+      # 2. Install Python 3.13 and put it on PATH.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # 3. Install the project + dev tools (pytest, pylint) from pyproject.
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      # 4. Lint every tracked .py file. pyproject's ignore-paths already
+      #    skips alembic/versions and .venv, so this respects the config.
+      - name: Lint
+        run: pylint $(git ls-files '*.py')
+
+      # 5. Pure unit tests — no database required (Tier 1).
+      - name: Unit tests
+        run: pytest tests/unit
