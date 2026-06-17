@@ -236,4 +236,81 @@ class TestGetChangesOnPostponing:
         new_date = TODAY + timedelta(days=7)
         changes = task.get_changes_on_postponing(date_due=new_date)
         assert changes["alert_state"] == AlertState.RED
+
+
+class TestGetChangesOnFrequencyChanging:
+    """Tests for Task.get_changes_on_frequency_changing: re-deriving the
+    schedule (frequency, date_last, date_due, alert_state) from a new
+    frequency."""
+
+    def test_new_frequency_is_stored(self):
+        old_frequency = timedelta(days=7)
+        task = Task(frequency=old_frequency, date_last=TODAY - old_frequency,
+                    date_due=TODAY, alert_state=AlertState.GREEN)
+        new_frequency = timedelta(days=10)
+        changes = task.get_changes_on_frequency_changing(
+            new_frequency, today=TODAY)
+        assert changes["frequency"] == new_frequency
+
+    def test_alert_state_is_present_in_changes(self):
+        # The change dict must carry an alert_state key so the update applies
+        # it; the exact value is derive_alert's concern (see TestDeriveAlert).
+        old_frequency = timedelta(days=7)
+        task = Task(frequency=old_frequency, date_last=TODAY - old_frequency,
+                    date_due=TODAY, alert_state=AlertState.GREEN)
+        changes = task.get_changes_on_frequency_changing(
+            timedelta(days=10), today=TODAY)
+        assert "alert_state" in changes
+
+    def test_due_is_existing_date_last_plus_new_frequency(self):
+        date_last = TODAY - timedelta(days=2)
+        task = Task(date_last=date_last, date_due=TODAY,
+                    alert_state=AlertState.GREEN)
+        new_frequency = timedelta(days=10)
+        changes = task.get_changes_on_frequency_changing(
+            new_frequency, today=TODAY)
+        # The existing date_last is kept and drives the new due date.
+        assert changes["date_last"] == date_last
+        assert changes["date_due"] == date_last + new_frequency
+
+    def test_setting_frequency_without_date_last_uses_today(self):
+        task = Task(date_last=None, date_due=None,
+                    alert_state=AlertState.INACTIVE)
+        new_frequency = timedelta(days=7)
+        changes = task.get_changes_on_frequency_changing(
+            new_frequency, today=TODAY)
+        assert changes["date_last"] == TODAY
+        assert changes["date_due"] == TODAY + new_frequency
+
+    @pytest.mark.xfail(
+        reason="#1 (muted-tasks family): changing a muted (INACTIVE) recurring "
+               "task's frequency re-derives the alert to GREEN, reactivating "
+               "it; it should stay INACTIVE (only the frequency updates). Same "
+               "root cause as the completion bug.",
+        strict=True,
+    )
+    def test_changing_frequency_keeps_muted_task_inactive(self):
+        # A muted recurring task keeps its frequency (deactivation mutes the
+        # signal, not the cadence); retuning the cadence while muted must not
+        # un-mute it.
+        task = Task(
+            frequency=timedelta(days=7),
+            date_last=TODAY - timedelta(days=2),
+            date_due=None,
+            alert_state=AlertState.INACTIVE,
+        )
+        changes = task.get_changes_on_frequency_changing(
+            timedelta(days=14), today=TODAY)
+        assert changes["alert_state"] == AlertState.INACTIVE
+
+    def test_clearing_frequency_keeps_date_due(self):
+        frequency = timedelta(days=7)
+        date_due = TODAY + frequency
+        task = Task(frequency=frequency, date_last=TODAY, date_due=date_due,
+                    alert_state=AlertState.GREEN)
+        changes = task.get_changes_on_frequency_changing(None, today=TODAY)
+        # Clearing frequency stops the recurrence but KEEPS the current due
+        # date (becomes a one-off deadline).
+        assert changes["frequency"] is None
+        assert changes["date_due"] == date_due
         
