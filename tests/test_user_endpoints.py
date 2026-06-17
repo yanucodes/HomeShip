@@ -1,10 +1,29 @@
 """Endpoint tests for the users router."""
 # Test names describe the scenario; per-test docstrings would be redundant.
 # pylint: disable=missing-function-docstring,redefined-outer-name
+import pytest
 
 
-def test_create_user_returns_201_without_password_hash(client, test_user_data):
-    user = test_user_data["all_fields_correct"]
+@pytest.fixture
+def user_data():
+    """User payloads owned by this module so the endpoint tests stay
+    independent of other test files' data."""
+    return {
+        "all_fields_correct": {
+            "username": "mustermann",
+            "email": "max.mustermann@example.com",
+            "password": "SomeNumbers-84927#",
+        },
+        "invalid_email": {
+            "username": "mustermann",
+            "email": "not-an-email",
+            "password": "SomeNumbers-84927#",
+        },
+    }
+
+
+def test_create_user_returns_201_without_password_hash(client, user_data):
+    user = user_data["all_fields_correct"]
     response = client.post("/users", json=user)
 
     assert response.status_code == 201
@@ -15,7 +34,7 @@ def test_create_user_returns_201_without_password_hash(client, test_user_data):
     assert body["email"] == user["email"]
 
 
-def test_create_user_rejects_invalid_email(client, test_user_data):
-    response = client.post("/users", json=test_user_data["invalid_email"])
+def test_create_user_rejects_invalid_email(client, user_data):
+    response = client.post("/users", json=user_data["invalid_email"])
 
     assert response.status_code == 422

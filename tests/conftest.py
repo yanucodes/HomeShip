@@ -1,9 +1,6 @@
 """Shared pytest fixtures: test database, rollback-per-test session, client."""
 # Using a fixture by depending on its name is the pytest idiom, not a bug.
 # pylint: disable=redefined-outer-name
-import json
-from pathlib import Path
-
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -20,15 +17,6 @@ if not settings.test_database_url:
         "test_database_url is not set. Add TEST_DATABASE_URL to your .env "
     )
 engine = create_engine(settings.test_database_url)
-
-TEST_DATA_PATH = Path(__file__).parent / "test_data.json"
-
-
-@pytest.fixture(scope="session")
-def test_user_data():
-    """The hand-written user fixtures from test_data.json."""
-    with TEST_DATA_PATH.open() as f:
-        return json.load(f)["test_user_data"]
 
 
 @pytest.fixture(scope="session", autouse=True)

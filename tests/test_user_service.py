@@ -1,6 +1,7 @@
 """Service-layer tests for UserService."""
 # Test names describe the scenario; per-test docstrings would be redundant.
 # pylint: disable=missing-function-docstring,redefined-outer-name
+import pytest
 from sqlalchemy.orm import Session
 
 from repositories import (
@@ -12,6 +13,19 @@ from schemas import UserCreate
 from services import UserService
 
 
+@pytest.fixture
+def user_data():
+    """User payloads owned by this module so the service tests stay
+    independent of other test files' data."""
+    return {
+        "all_fields_correct": {
+            "username": "mustermann",
+            "email": "max.mustermann@example.com",
+            "password": "SomeNumbers-84927#",
+        },
+    }
+
+
 def build_user_service(session: Session) -> UserService:
     return UserService(
         ship_repository=ShipRepository(session),
@@ -20,9 +34,9 @@ def build_user_service(session: Session) -> UserService:
     )
 
 
-def test_create_user_stores_hash_not_raw_password(session, test_user_data):
+def test_create_user_stores_hash_not_raw_password(session, user_data):
     service = build_user_service(session)
-    data = test_user_data["all_fields_correct"]
+    data = user_data["all_fields_correct"]
 
     user = service.create_user(UserCreate(**data))
 
@@ -32,9 +46,9 @@ def test_create_user_stores_hash_not_raw_password(session, test_user_data):
 
 
 def test_create_user_defaults_display_name_to_username(
-        session, test_user_data):
+        session, user_data):
     service = build_user_service(session)
-    data = test_user_data["all_fields_correct"]
+    data = user_data["all_fields_correct"]
 
     user = service.create_user(UserCreate(**data))
 
