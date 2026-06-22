@@ -313,4 +313,3 @@ class TestGetChangesOnFrequencyChanging:
         # date (becomes a one-off deadline).
         assert changes["frequency"] is None
         assert changes["date_due"] == date_due
-        
