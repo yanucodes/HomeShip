@@ -55,3 +55,14 @@ jobs:
       # 6. Integration tests - use test database.
       - name: Integration tests
         run: pytest tests/integration
+
+  deploy:
+    needs:
+      test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Trigger Render deploy
+        run: curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL"
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
