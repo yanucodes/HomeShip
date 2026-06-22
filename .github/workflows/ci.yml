@@ -8,7 +8,27 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest        # a fresh Linux VM, discarded after the run
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: homeship_test
+        ports:
+          - 5432:5432
+        options:
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/homeship_test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/homeship_test
+      JWT_SECRET_KEY: jwt-key-placeholder-required-variable
 
     steps:
       # 1. Clone the repo onto the runner.
@@ -28,6 +48,10 @@ jobs:
       - name: Lint
         run: pylint $(git ls-files '*.py')
 
-      # 5. Pure unit tests — no database required (Tier 1).
+      # 5. Pure unit tests — no database required.
       - name: Unit tests
         run: pytest tests/unit
+
+      # 6. Integration tests - use test database.
+      - name: Integration tests
+        run: pytest tests/integration
