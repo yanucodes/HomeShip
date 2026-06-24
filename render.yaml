@@ -1,17 +1,13 @@
 services:
   - type: web
     name: homeship-api
-    runtime: python
+    runtime: docker
     plan: free
     autoDeploy: false
-    buildCommand: pip install -e .
     # Free instances don't run preDeployCommand, so migrations run at startup.
     # Switch to a `preDeployCommand` if this service moves to a paid plan.
-    startCommand: alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.13"
       - key: DATABASE_URL
         fromDatabase:
           name: homeship-db
