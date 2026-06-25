@@ -65,7 +65,7 @@ STATUS=""
 BODY=""
 request() {
   local raw
-  raw="$(http --ignore-stdin --pretty=none --print=hb "$@" 2>/dev/null)" || raw=""
+  raw="$(http --ignore-stdin --follow --pretty=none --print=hb "$@" 2>/dev/null)" || raw=""
   STATUS="$(printf '%s\n' "$raw" | sed -n '1s@^HTTP/[0-9.]* \([0-9]\{3\}\).*@\1@p')"
   BODY="$(printf '%s\n' "$raw" | awk 'body{print} /^[[:space:]]*$/{body=1}')"
 }
