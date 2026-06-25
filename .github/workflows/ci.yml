@@ -10,24 +10,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: homeship_test
-        ports:
-          - 5432:5432
-        options:
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/homeship_test
-      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/homeship_test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/homeship
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/homeship
       JWT_SECRET_KEY: jwt-key-placeholder-required-variable
 
     steps:
@@ -39,26 +24,74 @@ jobs:
         with:
           python-version: "3.13"
 
-      # 3. Install the project + dev tools (pytest, pylint) from pyproject.
+      # 3. Start database
+      - name: Start database
+        run: docker compose up -d --wait db
+
+      # 4. Install the project + dev tools (pytest, pylint) from pyproject.
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
-      # 4. Lint every tracked .py file. pyproject's ignore-paths already
+      # 5. Lint every tracked .py file. pyproject's ignore-paths already
       #    skips alembic/versions and .venv, so this respects the config.
       - name: Lint
         run: pylint $(git ls-files '*.py')
 
-      # 5. Pure unit tests — no database required.
+      # 6. Pure unit tests — no database required.
       - name: Unit tests
         run: pytest tests/unit
 
-      # 6. Integration tests - use test database.
+      # 7. Integration tests
       - name: Integration tests
         run: pytest tests/integration
 
-  deploy:
+  build-image:
     needs:
       test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start the stack
+        run: docker compose up -d --build
+
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:8000/health && exit 0
+            sleep 2
+          done
+          echo "api never became healthy"; docker compose logs; exit 1
+
+      - name: Install httpie
+        run: pipx install httpie
+
+      - name: Smoke test
+        run: bash scripts/api_smoke_test.sh http://localhost:8000
+
+      - name: Logs (always)
+        if: always()
+        run: docker compose logs
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Tag and push
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker tag homeship-api:latest docker.io/${{ secrets.DOCKERHUB_USERNAME }}/homeship-api:latest
+          docker tag homeship-api:latest docker.io/${{ secrets.DOCKERHUB_USERNAME }}/homeship-api:${{ github.sha }}
+          docker push docker.io/${{ secrets.DOCKERHUB_USERNAME }}/homeship-api:latest
+          docker push docker.io/${{ secrets.DOCKERHUB_USERNAME }}/homeship-api:${{ github.sha }}
+
+  deploy:
+    needs:
+      build-image
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:

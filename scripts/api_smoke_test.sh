@@ -134,7 +134,7 @@ assert_status 200 "$STATUS" "login succeeded"
 TOKEN="$(jget '.access_token')"
 assert_present "$TOKEN" "JWT access_token returned"
 assert_eq "bearer" "$(jget '.token_type')" "token_type is bearer"
-AUTH=(-A bearer -a "$TOKEN")   # reuse on every authenticated call
+AUTH=(Authorization:"Bearer $TOKEN")   # reuse on every authenticated call
 echo "  ${GREEN}Authenticated${RESET} — token acquired"
 
 # =============================================================================
