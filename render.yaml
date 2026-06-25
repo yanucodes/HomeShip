@@ -1,7 +1,10 @@
 services:
   - type: web
     name: homeship-api
-    runtime: docker
+    runtime: image
+    image:
+      url:
+        docker.io/yanucodes/homeship-api:latest
     plan: free
     autoDeploy: false
     # Free instances don't run preDeployCommand, so migrations run at startup.
