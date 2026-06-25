@@ -64,6 +64,9 @@ jobs:
           done
           echo "api never became healthy"; docker compose logs; exit 1
 
+      - name: Install httpie
+        run: pipx install httpie
+
       - name: Smoke test
         run: bash scripts/api_smoke_test.sh http://localhost:8000
 
