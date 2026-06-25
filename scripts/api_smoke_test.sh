@@ -65,7 +65,7 @@ STATUS=""
 BODY=""
 request() {
   local raw
-  raw="$(http --ignore-stdin --follow --pretty=none --print=hb "$@")" || raw=""
+  raw="$(http --ignore-stdin --pretty=none --print=hb "$@" 2>/dev/null)" || raw=""
   STATUS="$(printf '%s\n' "$raw" | sed -n '1s@^HTTP/[0-9.]* \([0-9]\{3\}\).*@\1@p')"
   BODY="$(printf '%s\n' "$raw" | awk 'body{print} /^[[:space:]]*$/{body=1}')"
 }
@@ -80,9 +80,6 @@ add_days() { # N  ->  YYYY-MM-DD, N days from today
 # --- preflight ---------------------------------------------------------------
 command -v http >/dev/null 2>&1 || { echo "${RED}httpie ('http') not found.${RESET}"; exit 127; }
 command -v jq   >/dev/null 2>&1 || { echo "${RED}jq not found.${RESET}"; exit 127; }
-
-# DEBUG: surface tool versions so CI failures are reproducible.
-echo "httpie: $(http --version 2>&1)"
 
 STAMP="$(date +%s)"
 USERNAME="ada_${STAMP}"
@@ -137,7 +134,7 @@ assert_status 200 "$STATUS" "login succeeded"
 TOKEN="$(jget '.access_token')"
 assert_present "$TOKEN" "JWT access_token returned"
 assert_eq "bearer" "$(jget '.token_type')" "token_type is bearer"
-AUTH=(-A bearer -a "$TOKEN")   # reuse on every authenticated call
+AUTH=(Authorization:"Bearer $TOKEN")   # reuse on every authenticated call
 echo "  ${GREEN}Authenticated${RESET} — token acquired"
 
 # =============================================================================
