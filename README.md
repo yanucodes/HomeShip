@@ -158,5 +158,16 @@ The API is deployed on [Render](https://render.com) from a `render.yaml` **Bluep
 
 ## Testing
 
-- **Unit / integration tests:** `pytest` against an isolated `TEST_DATABASE_URL`. Coverage currently spans the **user** domain (`tests/test_user_service.py`, `tests/test_user_endpoints.py`); ship, task, and supply suites are in progress.
-- **End-to-end API smoke test:** with the server running, `./scripts/api_smoke_test.sh` drives the full user → ship → task → supply lifecycle over HTTP and asserts the responses. Requires [`httpie`](https://httpie.io) and [`jq`](https://jqlang.github.io/jq); target a remote instance by passing the base URL as an argument (or via `BASE_URL=...`).
+**Unit tests** (`tests/unit/`) — pure, no database. They cover the logic derived in each model layer:
+- `test_alert_state.py` — the `AlertState.escalate` state machine.
+- `test_task_model.py` — `Task`'s pure derivation methods.
+
+Run them with `pytest tests/unit` — no setup required. Coverage currently spans the **alert state** and **task** models; supply and ship model suites are in progress.
+
+**Integration tests** (`tests/integration/`) — exercise the service and HTTP layers against a real PostgreSQL database (`TEST_DATABASE_URL`):
+- `test_user_service.py` — `UserService` behavior (e.g. passwords are stored hashed).
+- `test_user_endpoints.py` — the users router over HTTP via FastAPI's `TestClient`.
+
+The shared `conftest.py` creates the schema once per session, then wraps **each test in a transaction that is rolled back afterward** (via a SQLAlchemy savepoint), so tests stay isolated without re-creating tables. The `TestClient` is wired to that same rolled-back session through a dependency override. Run them with `pytest tests/integration`. Coverage currently spans the **user** domain; ship, task, and supply service/endpoint suites are in progress.
+
+**End-to-end API smoke test** — with the server running, `./scripts/api_smoke_test.sh` drives the full user → ship → task → supply lifecycle over HTTP and asserts the responses. Requires [`httpie`](https://httpie.io) and [`jq`](https://jqlang.github.io/jq); target a remote instance by passing the base URL as an argument (or via `BASE_URL=...`). CI runs this against the containerized stack on every push.
