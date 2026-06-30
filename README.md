@@ -10,7 +10,7 @@ Imagine your apartment is your spaceship and you are the crew on this ship! You 
 
 **Solution.** Sharing a household chores list with everyone allows keeping track of what needs to be done, and what was already done by someone else. The space-travel angle makes tedious tasks more fun.
 
-HomeShip is currently a **backend HTTP API** (no frontend yet), designed so multiple clients (web, mobile) can sit on top of it.
+This repo is the **backend HTTP API**, designed so any number of clients can sit on top of it. A **web client** (Flask + Jinja2) is already in active development at [HomeShip-Web](https://github.com/yanucodes/HomeShip-Web), and a native **iOS** client is planned.
 
 ### Key Features
 - JWT-based authentication (login with email **or** username; Argon2 password hashing).
@@ -25,6 +25,7 @@ HomeShip is currently a **backend HTTP API** (no frontend yet), designed so mult
 - **Pydantic v2** / **pydantic-settings** — request/response schemas and env-backed config.
 - **Alembic** — database migrations.
 - **Argon2** (`argon2-cffi`) for password hashing, **PyJWT** for tokens.
+- **Docker** — the app ships as a container image (built in CI, run locally via `docker compose`, deployed to Render).
 
 ## Architecture
 
@@ -40,6 +41,10 @@ jobs/           hourly_update.py — the daily-advance cron entry point
 ```
 
 Alert states and the schedule fields are **derived in the model layer** (e.g. `Task.scheduled`, `Supply.set_alert_on_creation`, `*.get_changes_on_*`) so the same rules apply whether a change comes from an endpoint or the cron.
+
+### Client-agnostic by design
+
+The models, business rules, and the journey mechanic all live **server-side**; a client never sees an ORM model, only JSON over HTTP. So a client needs nothing more than the documented endpoints — no shared schema, no embedded logic. That keeps the same backend usable, unchanged, by very different front-ends: the Flask/Jinja2 [web client](https://github.com/yanucodes/HomeShip-Web) renders server-side pages against it today, and a future iOS app would consume the exact same API. New behavior is added once, at the API, and every client benefits without duplicating rules.
 
 ## The journey mechanic
 
@@ -141,7 +146,15 @@ Interactive docs are available at `/docs` (Swagger) and `/redoc` once the app is
 
 ## Running locally
 
-**Prerequisites:** Python 3.11+ and a PostgreSQL database.
+### With Docker (full stack)
+
+The quickest way to get a running instance is `docker compose up --build`. This starts PostgreSQL and the API together; the API container applies migrations (`alembic upgrade head`) at startup and then serves on `http://127.0.0.1:8000`. Connection details and a throwaway `JWT_SECRET_KEY` are baked into `docker-compose.yml`, so no `.env` is needed for this path.
+
+### Natively (for development)
+
+For an editable, auto-reloading workflow:
+
+**Prerequisites:** Python 3.11+ and a PostgreSQL database. You can spin up just the database with `docker compose up -d db` and point `DATABASE_URL` at it.
 
 1. Install dependencies (e.g. with `uv` or `pip install -e .`).
 2. Create a `.env` file. Required settings (see `.env.example` for the full list and `config.py` for defaults):
@@ -154,9 +167,36 @@ Interactive docs are available at `/docs` (Swagger) and `/redoc` once the app is
 
 ## Deployment
 
-The API is deployed on [Render](https://render.com) from a `render.yaml` **Blueprint**, so the topology — a web service plus a managed PostgreSQL database — is defined as code and provisioned together. Render parses the Blueprint, creates the database first, injects its connection string into the web service as `DATABASE_URL`, and then builds and starts the app.
+### CI/CD pipeline
+
+Every push and pull request runs through GitHub Actions (`.github/workflows/ci.yml`) as three dependent jobs:
+
+1. **`test`** — starts PostgreSQL via `docker compose`, installs the project with its `[dev]` extras, lints every tracked `.py` file with `pylint`, then runs the unit and integration suites as separate steps.
+2. **`build-image`** — builds the full stack with `docker compose up --build`, waits for `/health`, and runs the end-to-end smoke test against it. On pushes to `main`, it then logs in to Docker Hub and pushes the image tagged both `:latest` and `:<commit-sha>`.
+3. **`deploy`** — on pushes to `main`, triggers a Render deploy by calling its deploy hook.
+
+So `main` is only ever deployed from an image that already passed lint, unit, integration, and end-to-end checks.
+
+### Render
+
+The API runs on [Render](https://render.com), provisioned from a `render.yaml` **Blueprint** so the topology — a web service plus a managed PostgreSQL database — is defined as code. When the Blueprint is first applied, Render creates the database and injects its connection string into the web service as `DATABASE_URL`; `JWT_SECRET_KEY` is generated then too. That database is a persistent, managed instance — it lives on across deploys and is **not** recreated on each one.
+
+Rather than building from source, the web service uses `runtime: image` and **pulls the prebuilt image** (`docker.io/yanucodes/homeship-api`) that CI published. `autoDeploy` is off — deploys are triggered only by the pipeline's deploy hook, so what's live is always a CI-verified image. A deploy swaps in the new image against the same database; only migrations (run at startup) change its schema.
+
+Deploying a self-contained image rather than a Render-specific build keeps the app **portable**: today it runs on Render, but the same image runs unchanged on any host that can pull a container and hand it a PostgreSQL URL — there's no lock-in to one provider's build system.
 
 ## Testing
 
-- **Unit / integration tests:** `pytest` against an isolated `TEST_DATABASE_URL`. Coverage currently spans the **user** domain (`tests/test_user_service.py`, `tests/test_user_endpoints.py`); ship, task, and supply suites are in progress.
-- **End-to-end API smoke test:** with the server running, `./scripts/api_smoke_test.sh` drives the full user → ship → task → supply lifecycle over HTTP and asserts the responses. Requires [`httpie`](https://httpie.io) and [`jq`](https://jqlang.github.io/jq); target a remote instance by passing the base URL as an argument (or via `BASE_URL=...`).
+**Unit tests** (`tests/unit/`) — pure, no database. They cover the logic derived in each model layer:
+- `test_alert_state.py` — the `AlertState.escalate` state machine.
+- `test_task_model.py` — `Task`'s pure derivation methods.
+
+Run them with `pytest tests/unit` — no setup required. Coverage currently spans the **alert state** and **task** models; supply and ship model suites are in progress.
+
+**Integration tests** (`tests/integration/`) — exercise the service and HTTP layers against a real PostgreSQL database (`TEST_DATABASE_URL`):
+- `test_user_service.py` — `UserService` behavior (e.g. passwords are stored hashed).
+- `test_user_endpoints.py` — the users router over HTTP via FastAPI's `TestClient`.
+
+The shared `conftest.py` creates the schema once per session, then wraps **each test in a transaction that is rolled back afterward** (via a SQLAlchemy savepoint), so tests stay isolated without re-creating tables. The `TestClient` is wired to that same rolled-back session through a dependency override. Run them with `pytest tests/integration`. Coverage currently spans the **user** domain; ship, task, and supply service/endpoint suites are in progress.
+
+**End-to-end API smoke test** — with the server running, `./scripts/api_smoke_test.sh` drives the full user → ship → task → supply lifecycle over HTTP and asserts the responses. Requires [`httpie`](https://httpie.io) and [`jq`](https://jqlang.github.io/jq); target a remote instance by passing the base URL as an argument (or via `BASE_URL=...`). CI runs this against the containerized stack on every push.
