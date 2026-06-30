@@ -25,6 +25,7 @@ HomeShip is currently a **backend HTTP API** (no frontend yet), designed so mult
 - **Pydantic v2** / **pydantic-settings** — request/response schemas and env-backed config.
 - **Alembic** — database migrations.
 - **Argon2** (`argon2-cffi`) for password hashing, **PyJWT** for tokens.
+- **Docker** — the app ships as a container image (built in CI, run locally via `docker compose`, deployed to Render).
 
 ## Architecture
 
