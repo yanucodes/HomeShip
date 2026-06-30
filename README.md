@@ -154,7 +154,23 @@ Interactive docs are available at `/docs` (Swagger) and `/redoc` once the app is
 
 ## Deployment
 
-The API is deployed on [Render](https://render.com) from a `render.yaml` **Blueprint**, so the topology — a web service plus a managed PostgreSQL database — is defined as code and provisioned together. Render parses the Blueprint, creates the database first, injects its connection string into the web service as `DATABASE_URL`, and then builds and starts the app.
+### CI/CD pipeline
+
+Every push and pull request runs through GitHub Actions (`.github/workflows/ci.yml`) as three dependent jobs:
+
+1. **`test`** — starts PostgreSQL via `docker compose`, installs the project with its `[dev]` extras, lints every tracked `.py` file with `pylint`, then runs the unit and integration suites as separate steps.
+2. **`build-image`** — builds the full stack with `docker compose up --build`, waits for `/health`, and runs the end-to-end smoke test against it. On pushes to `main`, it then logs in to Docker Hub and pushes the image tagged both `:latest` and `:<commit-sha>`.
+3. **`deploy`** — on pushes to `main`, triggers a Render deploy by calling its deploy hook.
+
+So `main` is only ever deployed from an image that already passed lint, unit, integration, and end-to-end checks.
+
+### Render
+
+The API runs on [Render](https://render.com), provisioned from a `render.yaml` **Blueprint** so the topology — a web service plus a managed PostgreSQL database — is defined as code. When the Blueprint is first applied, Render creates the database and injects its connection string into the web service as `DATABASE_URL`; `JWT_SECRET_KEY` is generated then too. That database is a persistent, managed instance — it lives on across deploys and is **not** recreated on each one.
+
+Rather than building from source, the web service uses `runtime: image` and **pulls the prebuilt image** (`docker.io/yanucodes/homeship-api`) that CI published. `autoDeploy` is off — deploys are triggered only by the pipeline's deploy hook, so what's live is always a CI-verified image. A deploy swaps in the new image against the same database; only migrations (run at startup) change its schema.
+
+Deploying a self-contained image rather than a Render-specific build keeps the app **portable**: today it runs on Render, but the same image runs unchanged on any host that can pull a container and hand it a PostgreSQL URL — there's no lock-in to one provider's build system.
 
 ## Testing
 
