@@ -142,7 +142,15 @@ Interactive docs are available at `/docs` (Swagger) and `/redoc` once the app is
 
 ## Running locally
 
-**Prerequisites:** Python 3.11+ and a PostgreSQL database.
+### With Docker (full stack)
+
+The quickest way to get a running instance is `docker compose up --build`. This starts PostgreSQL and the API together; the API container applies migrations (`alembic upgrade head`) at startup and then serves on `http://127.0.0.1:8000`. Connection details and a throwaway `JWT_SECRET_KEY` are baked into `docker-compose.yml`, so no `.env` is needed for this path.
+
+### Natively (for development)
+
+For an editable, auto-reloading workflow:
+
+**Prerequisites:** Python 3.11+ and a PostgreSQL database. You can spin up just the database with `docker compose up -d db` and point `DATABASE_URL` at it.
 
 1. Install dependencies (e.g. with `uv` or `pip install -e .`).
 2. Create a `.env` file. Required settings (see `.env.example` for the full list and `config.py` for defaults):
