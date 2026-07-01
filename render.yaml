@@ -47,4 +47,4 @@ services:
 
 databases:
   - name: homeship-db
-    plan: free
+    plan: basic-256mb
