@@ -179,13 +179,17 @@ So `main` is only ever deployed from an image that already passed lint, unit, in
 
 ### Render
 
-The API runs on [Render](https://render.com), provisioned from a `render.yaml` **Blueprint** so the topology — a web service plus a managed PostgreSQL database — is defined as code. When the Blueprint is first applied, Render creates the database and injects its connection string into the web service as `DATABASE_URL`; `JWT_SECRET_KEY` is generated then too. That database is a persistent, managed instance — it lives on across deploys and is **not** recreated on each one.
+The API runs on [Render](https://render.com), provisioned from a `render.yaml` **Blueprint** so the topology — a web service, a scheduled cron job, and a managed PostgreSQL database — is defined as code. When the Blueprint is first applied, Render creates the database and injects its connection string into the web service as `DATABASE_URL`; `JWT_SECRET_KEY` is generated then too. That database is a persistent, managed instance — it lives on across deploys and is **not** recreated on each one.
 
 Rather than building from source, the web service uses `runtime: image` and **pulls the prebuilt image** (`docker.io/yanucodes/homeship-api`) that CI published. `autoDeploy` is off — deploys are triggered only by the pipeline's deploy hook, so what's live is always a CI-verified image. A deploy swaps in the new image against the same database; only migrations (run at startup) change its schema.
 
 Deploying a self-contained image rather than a Render-specific build keeps the app **portable**: today it runs on Render, but the same image runs unchanged on any host that can pull a container and hand it a PostgreSQL URL — there's no lock-in to one provider's build system.
 
-## Testing
+### Scheduled job
+
+The journey mechanic needs the daily advance to run on a timer, so the Blueprint also declares a `type: cron` service. It reuses the **same image** as the web service but overrides the start command (`dockerCommand: python -m jobs.hourly_update`), so on schedule Render starts the container, runs the job against the same database, and exits — no second build, no long-running process. This mirrors the standard production split between long-running services and scheduled batch jobs (e.g. a Kubernetes `Deployment` vs a `CronJob`), from one build artifact.
+
+The schedule is hourly in UTC (`0 * * * *`). Running hourly rather than once a day is deliberate: the job converts a single reference instant into each ship's own timezone and advances a ship only when its local `daily_rollover_hour` has arrived and it hasn't advanced yet that day. So an hourly UTC tick covers every timezone, and because the job is idempotent and self-healing, a missed run is caught up on the next tick.
 
 **Unit tests** (`tests/unit/`) — pure, no database. They cover the logic derived in each model layer:
 - `test_alert_state.py` — the `AlertState.escalate` state machine.
