@@ -5,16 +5,43 @@ services:
     image:
       url:
         docker.io/yanucodes/homeship-api:latest
-    plan: free
+    plan: starter
     autoDeploy: false
-    # Free instances don't run preDeployCommand, so migrations run at startup.
-    # Switch to a `preDeployCommand` if this service moves to a paid plan.
+    # Migrations run at container startup (the image CMD runs `alembic upgrade
+    # head` before uvicorn). On this paid plan a `preDeployCommand` would be an
+    # alternative, running migrations once per deploy instead of per boot.
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
         fromDatabase:
           name: homeship-db
           property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+
+  # Scheduled batch job. Reuses the SAME image as the web service above, but
+  # starts the container with a different command so it runs the hourly ship
+  # update and then exits — rather than the API server. Runs on its own
+  # ephemeral instance (not shared with the web service) and is billed per run.
+  - type: cron
+    name: homeship-hourly-update
+    runtime: image
+    image:
+      url:
+        docker.io/yanucodes/homeship-api:latest
+    plan: starter
+    autoDeploy: false
+    schedule: "0 * * * *"          # top of every hour, in UTC
+    # Overrides the image's default CMD (alembic upgrade head && uvicorn ...).
+    # The job doesn't serve HTTP or run migrations — just advances the ships.
+    dockerCommand: python -m jobs.hourly_update
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: homeship-db
+          property: connectionString
+      # Unused by the job, but config.py declares jwt_secret_key with no
+      # default, so the process would crash at import without it.
       - key: JWT_SECRET_KEY
         generateValue: true
 
