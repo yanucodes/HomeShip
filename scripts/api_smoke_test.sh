@@ -4,6 +4,9 @@
 #
 # Drives the running API end-to-end with HTTPie, exercising the full lifecycle
 # of a user, ship, membership, task and supply, and asserting the responses.
+# It then adds a second user to the ship to prove shared crew visibility — both
+# members see the same tasks and supplies, a deletion by either is visible to
+# both — before tearing the whole fixture down.
 #
 # Requirements:
 #   - The app running and reachable at $BASE_URL (default http://127.0.0.1:8000)
@@ -88,6 +91,13 @@ DISPLAY_NAME="Ada"
 NEW_DISPLAY_NAME="Ada Lovelace"
 PASSWORD="hunter2pass"
 
+# Second crew member, added to the ship by the first user to prove that ships,
+# tasks and supplies are shared across the crew.
+USERNAME2="grace_${STAMP}"
+EMAIL2="grace_${STAMP}@example.com"
+DISPLAY_NAME2="Grace"
+PASSWORD2="hopper2pass"
+
 TODAY="$(date +%F)"
 TASK_DUE_LATER="$(add_days 14)"     # > today+7 (initial task due), so postpone is valid
 SUPPLY_DUE_FAR="$(add_days 10)"     # > yellow window (7d) -> green on creation
@@ -95,6 +105,7 @@ SUPPLY_DUE_NEAR="$(add_days 3)"     # within yellow (7d), outside red (1d) -> ye
 
 echo "${BOLD}HomeShip API smoke test${RESET}  ->  $BASE_URL"
 echo "${DIM}user=$USERNAME  email=$EMAIL${RESET}"
+echo "${DIM}crewmate=$USERNAME2  email=$EMAIL2${RESET}"
 
 # =============================================================================
 # 0. Sanity check
@@ -361,31 +372,133 @@ assert_eq "null" "$(jget '.date_due')" "deadline cleared"
 assert_eq "null" "$(jget '.quantity')" "quantity cleared"
 
 # =============================================================================
-# 25. Deletion endpoints
+# Shared crew (25-29) — a second user joins the ship and must see exactly the
+# same tasks and supplies as the first. This is the core "shared visibility"
+# promise: the ship's contents belong to the crew, not to whoever created them.
 # =============================================================================
-step "25. Deletion endpoints"
 
+# 25. Create a second user
+step "25. Create a second user"
+request POST "$BASE_URL/users" \
+  username="$USERNAME2" email="$EMAIL2" display_name="$DISPLAY_NAME2" \
+  password="$PASSWORD2"
+assert_status 201 "$STATUS" "second user created"
+USER_ID2="$(jget '.user_id')"
+assert_present "$USER_ID2" "second user_id returned"
+assert_ne "$USER_ID" "$USER_ID2" "second user is distinct from the first"
+echo "  ${GREEN}Second user created${RESET} — id=$USER_ID2"
+
+# 26. First user adds the second user to the ship's crew, by email
+step "26. First user adds the second user to the crew"
+request POST "$BASE_URL/ships/$SHIP_ID/members" "${AUTH[@]}" \
+  email="$EMAIL2" role="Crew Member"
+assert_status 201 "$STATUS" "second user added as a member"
+assert_eq "$USER_ID2" "$(jget '.user.user_id')" "membership references the second user"
+assert_eq "Crew Member" "$(jget '.role')" "second user's role is Crew Member"
+request GET "$BASE_URL/ships/$SHIP_ID/members" "${AUTH[@]}"
+assert_eq "2" "$(jget 'length')" "ship now has two crew members"
+
+# 27. Second user authenticates on their own account
+step "27. Second user authenticates"
+request --form POST "$BASE_URL/auth/login" username="$EMAIL2" password="$PASSWORD2"
+assert_status 200 "$STATUS" "second user login succeeded"
+TOKEN2="$(jget '.access_token')"
+assert_present "$TOKEN2" "second user's JWT returned"
+AUTH2=(Authorization:"Bearer $TOKEN2")   # the second crew member's calls
+echo "  ${GREEN}Second user authenticated${RESET}"
+
+# 28. Second user sees the task and supply the first user created
+step "28. Second user sees the ship's tasks and supplies"
+request GET "$BASE_URL/ships/$SHIP_ID/tasks" "${AUTH2[@]}"
+assert_status 200 "$STATUS" "second user can list the ship's tasks"
+assert_eq "1" "$(jget 'length')" "second user sees exactly one task"
+assert_eq "$TASK_ID" "$(jget '.[0].task_id')" "it is the first user's task"
+TASKS_AS_USER2="$BODY"
+request GET "$BASE_URL/ships/$SHIP_ID/supplies" "${AUTH2[@]}"
+assert_status 200 "$STATUS" "second user can list the ship's supplies"
+assert_eq "1" "$(jget 'length')" "second user sees exactly one supply"
+assert_eq "$SUPPLY_ID" "$(jget '.[0].supply_id')" "it is the first user's supply"
+SUPPLIES_AS_USER2="$BODY"
+
+# 29. First user sees byte-for-byte the same lists as the second user
+step "29. First user sees the same tasks and supplies"
+request GET "$BASE_URL/ships/$SHIP_ID/tasks" "${AUTH[@]}"
+assert_status 200 "$STATUS" "first user can list the ship's tasks"
+if [[ "$(printf '%s' "$BODY" | jq -S .)" == "$(printf '%s' "$TASKS_AS_USER2" | jq -S .)" ]]; then
+  pass "task list is identical for both crew members"
+else
+  fail "task list differs between crew members" "$BODY"
+fi
+request GET "$BASE_URL/ships/$SHIP_ID/supplies" "${AUTH[@]}"
+assert_status 200 "$STATUS" "first user can list the ship's supplies"
+if [[ "$(printf '%s' "$BODY" | jq -S .)" == "$(printf '%s' "$SUPPLIES_AS_USER2" | jq -S .)" ]]; then
+  pass "supply list is identical for both crew members"
+else
+  fail "supply list differs between crew members" "$BODY"
+fi
+
+# =============================================================================
+# 30. Deletion endpoints — a deletion by any crew member is visible to all.
+# =============================================================================
+step "30. Deletion is shared across the crew"
+
+# First user deletes the task; it must be gone for both crew members.
 request DELETE "$BASE_URL/ships/$SHIP_ID/tasks/$TASK_ID" "${AUTH[@]}"
-assert_status 204 "$STATUS" "task deleted"
+assert_status 204 "$STATUS" "first user deleted the task"
 request GET "$BASE_URL/ships/$SHIP_ID/tasks/$TASK_ID" "${AUTH[@]}"
-assert_status 404 "$STATUS" "deleted task is gone (404)"
+assert_status 404 "$STATUS" "task gone for the first user (404)"
+request GET "$BASE_URL/ships/$SHIP_ID/tasks/$TASK_ID" "${AUTH2[@]}"
+assert_status 404 "$STATUS" "task gone for the second user too (404)"
 
-request DELETE "$BASE_URL/ships/$SHIP_ID/supplies/$SUPPLY_ID" "${AUTH[@]}"
-assert_status 204 "$STATUS" "supply deleted"
+# Second user deletes the supply; it must be gone for both crew members.
+request DELETE "$BASE_URL/ships/$SHIP_ID/supplies/$SUPPLY_ID" "${AUTH2[@]}"
+assert_status 204 "$STATUS" "second user deleted the supply"
+request GET "$BASE_URL/ships/$SHIP_ID/supplies/$SUPPLY_ID" "${AUTH2[@]}"
+assert_status 404 "$STATUS" "supply gone for the second user (404)"
 request GET "$BASE_URL/ships/$SHIP_ID/supplies/$SUPPLY_ID" "${AUTH[@]}"
-assert_status 404 "$STATUS" "deleted supply is gone (404)"
+assert_status 404 "$STATUS" "supply gone for the first user too (404)"
 
-# Leaving the ship as its only member deletes the ship via cascade.
+# =============================================================================
+# 31. First user leaves the ship. As one of two members they only give up their
+# own seat — the ship stands for the second user, but is now off-limits to the
+# one who left.
+# =============================================================================
+step "31. First user leaves the ship"
 request DELETE "$BASE_URL/users/me/ships/$SHIP_ID" "${AUTH[@]}"
-assert_status 204 "$STATUS" "left/deleted ship"
+assert_status 204 "$STATUS" "first user left the ship"
+# No longer a member: the ship and its contents are off-limits to them (404).
 request GET "$BASE_URL/ships/$SHIP_ID" "${AUTH[@]}"
-assert_status 404 "$STATUS" "ship is gone (404)"
+assert_status 404 "$STATUS" "former member cannot fetch the ship (404)"
+request GET "$BASE_URL/ships/$SHIP_ID/tasks" "${AUTH[@]}"
+assert_status 404 "$STATUS" "former member cannot list the ship's tasks (404)"
+request GET "$BASE_URL/ships/$SHIP_ID/supplies" "${AUTH[@]}"
+assert_status 404 "$STATUS" "former member cannot list the ship's supplies (404)"
+# The ship stands: the second user is still aboard, now as its sole member.
+request GET "$BASE_URL/ships/$SHIP_ID" "${AUTH2[@]}"
+assert_status 200 "$STATUS" "ship still exists for the second user"
+request GET "$BASE_URL/ships/$SHIP_ID/members" "${AUTH2[@]}"
+assert_eq "1" "$(jget 'length')" "ship now has a single member"
+assert_eq "$USER_ID2" "$(jget '.[0].user.user_id')" "the remaining member is the second user"
+
+# =============================================================================
+# 32. Tear down both users. The first has already left, so their deletion is a
+# plain account removal; the second is the ship's last member, so deleting them
+# cascades the ship, its membership, tasks and supplies away.
+# =============================================================================
+step "32. Delete both users"
 
 request DELETE "$BASE_URL/users/me" "${AUTH[@]}"
-assert_status 204 "$STATUS" "user deleted"
+assert_status 204 "$STATUS" "first user deleted"
 # Token now points at a deleted user; /users/me should no longer resolve.
 request GET "$BASE_URL/users/me" "${AUTH[@]}"
-assert_ne "200" "$STATUS" "deleted user can no longer fetch /users/me (HTTP $STATUS)"
+assert_ne "200" "$STATUS" "deleted first user can no longer fetch /users/me (HTTP $STATUS)"
+
+request DELETE "$BASE_URL/users/me" "${AUTH2[@]}"
+assert_status 204 "$STATUS" "second user deleted"
+request GET "$BASE_URL/users/me" "${AUTH2[@]}"
+assert_ne "200" "$STATUS" "deleted second user can no longer fetch /users/me (HTTP $STATUS)"
+# The second user was the ship's last member, so the ship is cascade-deleted.
+# With both users gone there is no longer an authorized caller to observe it.
 
 # =============================================================================
 # Summary
