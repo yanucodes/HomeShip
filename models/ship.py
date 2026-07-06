@@ -86,6 +86,26 @@ class Ship(Base):
         return counts
 
     @property
+    def current_condition(self) -> AlertState:
+        """Overall alert condition of the ship, from its worst active item.
+
+        This is the single level a console renders as the ship's state (lamp,
+        theme): the most severe alert among the ship's tasks and supplies.
+        INACTIVE items are untracked and never set the condition.
+
+        Returns:
+            The highest `AlertState` present across tasks and supplies
+            (AUTO_DESTRUCT > RED > YELLOW), or GREEN when no item raises an
+            alert — including a ship with no active items at all.
+        """
+        alerts = self.current_alerts
+        for state in (AlertState.AUTO_DESTRUCT, AlertState.RED,
+                      AlertState.YELLOW):
+            if alerts[state]:
+                return state
+        return AlertState.GREEN
+
+    @property
     def current_speed(self) -> float | None:
         """Current travel speed in light years per day, from the alert mix.
 

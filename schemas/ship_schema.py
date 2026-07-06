@@ -4,8 +4,12 @@ from datetime import date
 from typing import Annotated
 from uuid import UUID
 
-from pydantic import AfterValidator, BaseModel, ConfigDict
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
+from models.alert_state import AlertState
+from schemas.ship_member_schema import ShipMemberRead
+from schemas.supply_schema import SupplyRead
+from schemas.task_schema import TaskRead
 from schemas.validators import bounded_str, valid_timezone
 
 
@@ -30,6 +34,23 @@ class ShipRead(ShipBase):
     start_date: date
     distance: float
     model_config = ConfigDict(from_attributes=True)
+
+
+class ShipDashboard(ShipRead):
+    """Everything a client needs to render the ship's console in one request.
+
+    Extends `ShipRead` with the ship's derived journey/alert data and its
+    nested crew, task and supply collections. The aliased fields are read off
+    the `Ship` ORM object's properties and relationships; they serialize under
+    the plain field names.
+    """
+    condition: AlertState = Field(validation_alias="current_condition")
+    current_speed: float | None
+    alert_counts: dict[AlertState, int] = Field(
+        validation_alias="current_alerts")
+    members: list[ShipMemberRead] = Field(validation_alias="ship_memberships")
+    tasks: list[TaskRead]
+    supplies: list[SupplyRead]
 
 
 class ShipUpdate(BaseModel):

@@ -51,6 +51,24 @@ class ShipService:
         """
         return self.ship_repository.get(ship_id)
 
+    def get_dashboard(self, ship: Ship) -> Ship:
+        """Gather everything a client needs to render the ship's console.
+
+        The ship object already carries all dashboard data — its tasks,
+        supplies and crew relationships plus the derived `current_condition`,
+        `current_speed` and `current_alerts` properties — so today this is a
+        deliberate pass-through. It exists as the dashboard's orchestration
+        point: eager loading or additional dashboard data would land here,
+        not in the router.
+
+        Args:
+            ship: Ship whose console data to gather.
+
+        Returns:
+            The ship, ready to be serialized as a dashboard.
+        """
+        return ship
+
     def run_daily(self, ship: Ship, now: datetime | None = None) -> bool:
         """Advance the ship one day if its local rollover hour has arrived.
 

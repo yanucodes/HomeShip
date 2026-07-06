@@ -77,7 +77,7 @@ The hourly job (`python -m jobs.hourly_update`) converts a single reference inst
 | timezone         | VARCHAR(64) | not null, default `"UTC"`; IANA name (e.g. `Europe/Berlin`)           |
 | `last_advanced_on` | DATE        | nullable; ship-local date the cron last advanced this ship            |
 
-Derived (not stored): `current_alerts` (alert mix) and `current_speed`.
+Derived (not stored): `current_alerts` (alert mix), `current_condition` (worst active alert — the ship's overall state) and `current_speed`.
 
 ### `ship_members`
 Association object linking users to ships (many-to-many) with role data.
@@ -138,7 +138,7 @@ All endpoints are JSON. Everything except `POST /users`, `POST /auth/login`, and
 | Auth    | `POST /auth/login` (form: `username` = email or username, `password`) |
 | Users   | `POST /users` · `GET/PATCH/DELETE /users/me` |
 | Ships (owner) | `POST/GET /users/me/ships` · `PATCH/DELETE /users/me/ships/{ship_id}` |
-| Ships   | `GET /ships/{ship_id}` · `GET/POST /ships/{ship_id}/members` · `PATCH /ships/{ship_id}/members/me` |
+| Ships   | `GET /ships/{ship_id}` · `GET /ships/{ship_id}/dashboard` (console aggregate: ship + condition/speed/alert counts + members + tasks + supplies) · `GET/POST /ships/{ship_id}/members` · `PATCH /ships/{ship_id}/members/me` |
 | Tasks   | `GET/POST /ships/{ship_id}/tasks` · `GET/PATCH/DELETE /ships/{ship_id}/tasks/{task_id}` · `POST .../complete` · `.../postpone` · `.../change_frequency` · `.../deactivate` |
 | Supplies| `GET/POST /ships/{ship_id}/supplies` · `GET/PATCH/DELETE /ships/{ship_id}/supplies/{supply_id}` · `POST .../change_stock_state` · `.../reschedule` · `.../deactivate` |
 
