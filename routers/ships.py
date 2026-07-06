@@ -5,10 +5,10 @@ from dependencies import (get_current_ship_membership_or_404,
                           get_current_users_ship_or_404,
                           get_ship_service, get_supply_or_404, get_task_or_404)
 from models import Ship, ShipMember, Supply, Task
-from schemas import (FrequencyChange, ShipRead, ShipMemberAdd, ShipMemberRead,
-                     ShipMemberUpdate, StockStateChange, SupplyCreate,
-                     SupplyRead, SupplyReschedule, SupplyUpdate, TaskCreate,
-                     TaskPostpone, TaskRead, TaskUpdate)
+from schemas import (FrequencyChange, ShipDashboard, ShipRead, ShipMemberAdd,
+                     ShipMemberRead, ShipMemberUpdate, StockStateChange,
+                     SupplyCreate, SupplyRead, SupplyReschedule, SupplyUpdate,
+                     TaskCreate, TaskPostpone, TaskRead, TaskUpdate)
 from services import ShipService
 
 router = APIRouter(prefix="/ships", tags=["ships"])
@@ -27,6 +27,28 @@ def get_ship(ship: Ship = Depends(get_current_users_ship_or_404)):
         The ship serialized as `ShipRead`.
     """
     return ship
+
+
+@router.get("/{ship_id}/dashboard", response_model=ShipDashboard,
+            operation_id="getShipDashboard")
+def get_dashboard(ship: Ship = Depends(get_current_users_ship_or_404),
+                  service: ShipService = Depends(get_ship_service)):
+    """
+    Fetch everything needed to render the ship's console in one request.
+
+    Aggregates the ship's core fields with its derived journey data (overall
+    alert condition, current speed, alert counts) and its full crew, task and
+    supply lists.
+
+    Args:
+        ship: Ship resolved from the path's `ship_id` (404 if not found or
+            current user is not a member).
+        service: Ship service, injected by FastAPI via `get_ship_service`.
+
+    Returns:
+        The ship serialized as `ShipDashboard`.
+    """
+    return service.get_dashboard(ship)
 
 
 @router.get("/{ship_id}/members", response_model=list[ShipMemberRead],
