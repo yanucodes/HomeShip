@@ -4,6 +4,8 @@ Loads configuration from the environment (`.env`) into a single `settings`
 object that the rest of the app imports, so nothing reads `os.environ`
 directly.
 """
+from urllib.parse import urlsplit
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -32,6 +34,9 @@ class Settings(BaseSettings):
         daily_rollover_hour: Local hour (0-23) at which a ship's day rolls over
             and the hourly cron advances it. Default 3 (3 AM) gives night owls
             a grace window to finish a last chore after midnight.
+        cors_allowed_origins: Browser origins allowed to call the API, each as
+            `scheme://host[:port]`. Defaults to the Vite dev server. Set in the
+            environment as a JSON list.
     """
     model_config = SettingsConfigDict(env_file=".env")
     database_url: str
@@ -43,6 +48,41 @@ class Settings(BaseSettings):
     supply_deadline_red_days: int = 1
     supply_deadline_yellow_days: int = 7
     daily_rollover_hour: int = 3
+    cors_allowed_origins: list[str] = ["http://localhost:5173"]
+
+    @field_validator("cors_allowed_origins")
+    @classmethod
+    def _require_exact_origins(cls, value: list[str]) -> list[str]:
+        """Reject entries that are wildcards or can never match a browser origin.
+
+        Browsers send the origin as lowercase `scheme://host[:port]` and the
+        CORS middleware compares it by exact string, so a trailing slash, a
+        path or uppercase letters would block every request with no error on
+        the server. Failing at startup makes that mistake visible.
+
+        Args:
+            value: The configured origins.
+
+        Returns:
+            The origins, unchanged.
+
+        Raises:
+            ValueError: If an entry is not an exact http(s) origin.
+        """
+        for origin in value:
+            parts = urlsplit(origin)
+            exact_origin = f"{parts.scheme}://{parts.netloc}".lower()
+            if (
+                parts.scheme not in ("http", "https")
+                or not parts.netloc
+                or "*" in origin
+                or origin != exact_origin
+            ):
+                raise ValueError(
+                    f"Invalid CORS origin {origin!r}: expected lowercase "
+                    "scheme://host[:port], with no wildcard, path or trailing slash"
+                )
+        return value
 
     @field_validator("database_url", "test_database_url")
     @classmethod
