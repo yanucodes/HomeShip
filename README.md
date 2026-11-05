@@ -160,7 +160,7 @@ For an editable, auto-reloading workflow:
 2. Create a `.env` file. Required settings (see `.env.example` for the full list and `config.py` for defaults):
    - `DATABASE_URL` — PostgreSQL connection string (a bare `postgres://`/`postgresql://` URL is rewritten to the `psycopg` driver automatically).
    - `JWT_SECRET_KEY` — secret used to sign tokens.
-   - Optional tuning: `JWT_ALGORITHM` (default `HS256`), `ACCESS_TOKEN_EXPIRE_MINUTES`, `DEFAULT_POSTPONE_DAYS`, `SUPPLY_DEADLINE_RED_DAYS`, `SUPPLY_DEADLINE_YELLOW_DAYS`, `DAILY_ROLLOVER_HOUR`.
+   - Optional tuning: `JWT_ALGORITHM` (default `HS256`), `ACCESS_TOKEN_EXPIRE_MINUTES`, `DEFAULT_POSTPONE_DAYS`, `SUPPLY_DEADLINE_RED_DAYS`, `SUPPLY_DEADLINE_YELLOW_DAYS`, `DAILY_ROLLOVER_HOUR`, `CORS_ALLOWED_ORIGINS` (JSON list, default `["http://localhost:5173"]`).
 3. Apply migrations: `alembic upgrade head`.
 4. Run the API: `uvicorn main:app --reload` (serves on `http://127.0.0.1:8000`).
 5. Run the daily advance manually (normally scheduled hourly): `python -m jobs.hourly_update`.

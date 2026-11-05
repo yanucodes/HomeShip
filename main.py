@@ -1,15 +1,26 @@
 """FastAPI application entry point.
 
-Creates the app and mounts the HTTP routers.
+Creates the app, adds CORS and mounts the HTTP routers.
 """
 from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from config import settings
 from database import get_session
 from routers import auth, ships, users
 
 app = FastAPI()
+
+# Clients authenticate with bearer tokens, not cookies, so no credentials mode.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_allowed_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
+)
 
 app.include_router(users.router)
 app.include_router(ships.router)
