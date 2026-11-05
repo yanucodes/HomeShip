@@ -10,7 +10,7 @@ Imagine your apartment is your spaceship and you are the crew on this ship! You 
 
 **Solution.** Sharing a household chores list with everyone allows keeping track of what needs to be done, and what was already done by someone else. The space-travel angle makes tedious tasks more fun.
 
-This repo is the **backend HTTP API**, designed so any number of clients can sit on top of it. A **web client** (Flask + Jinja2) is already in active development at [HomeShip-Web](https://github.com/yanucodes/HomeShip-Web), and a native **iOS** client is planned.
+This repo is the **backend HTTP API**, designed so any number of clients can sit on top of it. A **web client** (React) is in development at [HomeShip-Web](https://github.com/yanucodes/HomeShip-Web), and an iOS app is planned.
 
 ### Key Features
 - JWT-based authentication (login with email **or** username; Argon2 password hashing).
@@ -44,7 +44,7 @@ Alert states and the schedule fields are **derived in the model layer** (e.g. `T
 
 ### Client-agnostic by design
 
-The models, business rules, and the journey mechanic all live **server-side**; a client never sees an ORM model, only JSON over HTTP. So a client needs nothing more than the documented endpoints — no shared schema, no embedded logic. That keeps the same backend usable, unchanged, by very different front-ends: the Flask/Jinja2 [web client](https://github.com/yanucodes/HomeShip-Web) renders server-side pages against it today, and a future iOS app would consume the exact same API. New behavior is added once, at the API, and every client benefits without duplicating rules.
+The models, business rules, and the journey mechanic all live **server-side**; a client never sees an ORM model, only JSON over HTTP. So a client needs nothing more than the documented endpoints — no shared schema, no embedded logic. That keeps the same backend usable, unchanged, by different front-ends: the React [web client](https://github.com/yanucodes/HomeShip-Web) renders server-side pages against it today, and a future iOS app would consume the exact same API. New behavior is added once, at the API, and every client benefits without duplicating rules.
 
 ## The journey mechanic
 
